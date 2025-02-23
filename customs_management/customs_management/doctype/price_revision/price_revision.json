@@ -1,0 +1,230 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-06-14 03:41:01.390282",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_details_section",
+  "item",
+  "description",
+  "column_break_snej6",
+  "qty",
+  "uom",
+  "column_break_inaxb",
+  "stock_qty",
+  "stock_uom",
+  "costing_details_section",
+  "base",
+  "column_break_pfrjr",
+  "markup_percent",
+  "markup_value",
+  "column_break_u60ub",
+  "each_price",
+  "case_price",
+  "new_price_section",
+  "current_price",
+  "column_break_dz9fi",
+  "diff_percentage",
+  "column_break_fyndm",
+  "updated_each_price",
+  "updated_case_price",
+  "section_break_opygg",
+  "approved",
+  "price_approved"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Qty",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Uom",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "stock_qty",
+   "fieldtype": "Float",
+   "label": "Stock Qty",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item.stock_uom",
+   "fieldname": "stock_uom",
+   "fieldtype": "Link",
+   "label": "Stock Uom",
+   "options": "UOM",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "fieldname": "current_price",
+   "fieldtype": "Currency",
+   "label": "Current Price",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "fieldname": "diff_percentage",
+   "fieldtype": "Percent",
+   "label": " Difference( in %)",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "eval:doc.price_approved != 1",
+   "fieldname": "approved",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Approved"
+  },
+  {
+   "fieldname": "column_break_snej6",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_inaxb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "costing_details_section",
+   "fieldtype": "Section Break",
+   "label": "Costing Details"
+  },
+  {
+   "fieldname": "column_break_pfrjr",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_u60ub",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "new_price_section",
+   "fieldtype": "Section Break",
+   "label": "New Price",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_dz9fi",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_fyndm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_opygg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "price_approved",
+   "fieldtype": "Check",
+   "label": "Price Approved",
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_details_section",
+   "fieldtype": "Section Break",
+   "label": "Item Details"
+  },
+  {
+   "columns": 3,
+   "fetch_from": "item.item_name",
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "base",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "markup_percent",
+   "fieldtype": "Percent",
+   "label": "Markup %",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "markup_value",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Markup Value",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "fieldname": "case_price",
+   "fieldtype": "Currency",
+   "label": "Case Price"
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "fieldname": "each_price",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Each Price"
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "fieldname": "updated_case_price",
+   "fieldtype": "Currency",
+   "label": "Updated Case Price"
+  },
+  {
+   "allow_on_submit": 1,
+   "columns": 1,
+   "fieldname": "updated_each_price",
+   "fieldtype": "Currency",
+   "label": "Updated Each Price"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-22 12:58:58.299704",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Price Revision",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

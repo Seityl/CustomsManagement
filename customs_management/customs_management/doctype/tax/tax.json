@@ -1,0 +1,136 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-06-05 12:34:44.586404",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "tax_information_section",
+  "invoice",
+  "column_break_smqv",
+  "invoice_total",
+  "base_invoice_total",
+  "section_break_bnhy",
+  "duty",
+  "surcharge",
+  "service",
+  "vat",
+  "excise",
+  "column_break_kjsk",
+  "base_duty",
+  "base_surcharge",
+  "base_service",
+  "base_vat",
+  "base_excise"
+ ],
+ "fields": [
+  {
+   "fieldname": "tax_information_section",
+   "fieldtype": "Section Break",
+   "label": "Tax Information"
+  },
+  {
+   "fieldname": "invoice",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Invoice"
+  },
+  {
+   "fieldname": "column_break_smqv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "invoice_total",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Invoice Total"
+  },
+  {
+   "fieldname": "section_break_bnhy",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "duty",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Duty"
+  },
+  {
+   "fieldname": "surcharge",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Surcharge"
+  },
+  {
+   "fieldname": "service",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Service"
+  },
+  {
+   "fieldname": "vat",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "VAT"
+  },
+  {
+   "fieldname": "excise",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Excise"
+  },
+  {
+   "fieldname": "column_break_kjsk",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "base_duty",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Duty (XCD)"
+  },
+  {
+   "fieldname": "base_surcharge",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Surcharge (XCD)"
+  },
+  {
+   "fieldname": "base_service",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Service(XCD)"
+  },
+  {
+   "fieldname": "base_vat",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base VAT (XCD)"
+  },
+  {
+   "fieldname": "base_excise",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Exise (XCD)"
+  },
+  {
+   "fieldname": "base_invoice_total",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Base Invoice Total"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-16 23:34:38.301494",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Tax",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

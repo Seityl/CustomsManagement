@@ -1,0 +1,288 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2023-04-14 18:40:20.333690",
+ "default_view": "List",
+ "description": "The tariff application form helps segregation of items based on Tariff Codes & also helps in the application for additional charges to adjust the landed cost of the procured items accordingly.",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "suppliers_name",
+  "invoice_number",
+  "column_break_g6b36",
+  "reference_doctype",
+  "reference_document",
+  "currency",
+  "column_break_frfij",
+  "grand_total",
+  "total_item_qty",
+  "item_count",
+  "distribute_charges_based_on",
+  "additional_cost_section",
+  "additional_charges",
+  "total_taxes_and_charges",
+  "item_details_tab",
+  "items",
+  "total",
+  "tariff_number_summary",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "TAF-.WW..###",
+   "print_hide": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Purchase Receipt",
+   "fieldname": "reference_doctype",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_standard_filter": 1,
+   "label": "Reference DocType",
+   "options": "DocType",
+   "read_only": 1,
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "reference_document",
+   "fieldtype": "Dynamic Link",
+   "in_filter": 1,
+   "in_preview": 1,
+   "in_standard_filter": 1,
+   "label": "Reference Document",
+   "no_copy": 1,
+   "options": "reference_doctype",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_frfij",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 1,
+   "fieldname": "grand_total",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "in_preview": 1,
+   "label": "Grand Total",
+   "no_copy": 1,
+   "non_negative": 1,
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "total_item_qty",
+   "fieldtype": "Float",
+   "in_preview": 1,
+   "label": "Total Item Qty",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_count",
+   "fieldtype": "Int",
+   "in_preview": 1,
+   "label": "Item Count",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "additional_cost_section",
+   "fieldtype": "Section Break",
+   "hidden": 1,
+   "label": "Additional Cost"
+  },
+  {
+   "default": "Qty",
+   "fieldname": "distribute_charges_based_on",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Distribute Charges Based On",
+   "options": "Qty\nAmount",
+   "reqd": 1
+  },
+  {
+   "fieldname": "additional_charges",
+   "fieldtype": "Table",
+   "label": "Additional Charges",
+   "options": "Landed Cost Taxes and Charges"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Tariff Application Item"
+  },
+  {
+   "fieldname": "tariff_number_summary",
+   "fieldtype": "Table",
+   "label": "Tariff Number Summary",
+   "options": "Tariff Number Summary"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "print_hide": 1,
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_taxes_and_charges",
+   "fieldtype": "Currency",
+   "label": "Total Taxes and Charges (Company Currency)",
+   "options": "Company:company:default_currency",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Tariff Application",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_details_tab",
+   "fieldtype": "Section Break",
+   "label": "Item Details"
+  },
+  {
+   "columns": 3,
+   "fieldname": "suppliers_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Supplier's Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_g6b36",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 3,
+   "fieldname": "invoice_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Invoice Number"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [
+  {
+   "group": "Custom Management",
+   "link_doctype": "Landed Cost Voucher",
+   "link_fieldname": "tariff_application"
+  }
+ ],
+ "modified": "2024-05-30 02:47:26.406983",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Tariff Application",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Import User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Import Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

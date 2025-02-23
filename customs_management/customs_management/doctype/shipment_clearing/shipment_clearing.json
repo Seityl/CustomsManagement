@@ -1,0 +1,302 @@
+{
+ "actions": [],
+ "autoname": "naming_series:naming_series",
+ "creation": "2023-04-24 19:54:42.928040",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "customs_entry",
+  "custom_reference_number",
+  "column_break_yzsp2",
+  "company",
+  "sales_pricelist",
+  "bill_of_lading",
+  "custom_entry_currency",
+  "section_break_abhqf",
+  "tariff_number_summary",
+  "items_tab",
+  "items",
+  "line_details_tab",
+  "section_break_nszdj",
+  "bank_percentage",
+  "handler_percentage",
+  "column_break_olyn1",
+  "bank_percentage_value",
+  "handler_percentage_value",
+  "total_charges_amount",
+  "section_break_u3ifz",
+  "additional_charges",
+  "markup_summary_tab",
+  "markup_summary",
+  "price_revision_tab",
+  "price_revision_items",
+  "section_break_vtst",
+  "total_purchase_amount",
+  "column_break_awht",
+  "total_landed_cost",
+  "section_break_ilpg",
+  "amended_from",
+  "other_tab",
+  "exempt_invoices",
+  "distribute_charges_based_on"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customs_entry",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_global_search": 1,
+   "in_list_view": 1,
+   "in_preview": 1,
+   "in_standard_filter": 1,
+   "label": "Customs Entry",
+   "no_copy": 1,
+   "options": "Customs Entry",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Shipment Clearing",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "markup_summary",
+   "fieldtype": "Table",
+   "label": "Markup Summary",
+   "options": "Markup Summary"
+  },
+  {
+   "fieldname": "line_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Additional Charges"
+  },
+  {
+   "fieldname": "exempt_invoices",
+   "fieldtype": "Table",
+   "label": "Exempt Invoices",
+   "options": "Exempt Invoices",
+   "read_only": 1
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Customs Entry Tariff Application Item",
+   "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "additional_charges",
+   "fieldtype": "Table",
+   "label": "Additional Charges",
+   "options": "Landed Cost Taxes and Charges"
+  },
+  {
+   "fieldname": "distribute_charges_based_on",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Distribute Charges Based On",
+   "options": "Qty\nAmount"
+  },
+  {
+   "fieldname": "column_break_yzsp2",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_abhqf",
+   "fieldtype": "Section Break"
+  },
+  {
+   "depends_on": "eval:doc.docstatus == 1 ",
+   "fieldname": "price_revision_tab",
+   "fieldtype": "Tab Break",
+   "label": "Price Revision"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "price_revision_items",
+   "fieldtype": "Table",
+   "label": "Price Revision Items",
+   "options": "Price Revision"
+  },
+  {
+   "default": "Standard Selling",
+   "fieldname": "sales_pricelist",
+   "fieldtype": "Link",
+   "label": "Sales Pricelist",
+   "options": "Price List",
+   "reqd": 1
+  },
+  {
+   "fieldname": "tariff_number_summary",
+   "fieldtype": "Table",
+   "label": "Tariff Number Summary",
+   "options": "Tariff Number Summary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "bank_percentage",
+   "fieldtype": "Percent",
+   "label": "Bank Percentage"
+  },
+  {
+   "fieldname": "bank_percentage_value",
+   "fieldtype": "Currency",
+   "label": "Bank Percentage Value (XCD)",
+   "precision": "1",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_nszdj",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_olyn1",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_u3ifz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_charges_amount",
+   "fieldtype": "Currency",
+   "label": "Total Charges Amount (XCD)",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "handler_percentage_value",
+   "fieldtype": "Currency",
+   "label": "Handler Percentage Value (XCD)",
+   "precision": "2",
+   "read_only": 1
+  },
+  {
+   "fieldname": "custom_reference_number",
+   "fieldtype": "Data",
+   "label": "Custom Reference Number",
+   "reqd": 1,
+   "translatable": 1
+  },
+  {
+   "fetch_from": "customs_entry.bill_of_lading",
+   "fieldname": "bill_of_lading",
+   "fieldtype": "Data",
+   "label": "Bill of Lading",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "customs_entry.currency",
+   "fieldname": "custom_entry_currency",
+   "fieldtype": "Link",
+   "label": "Custom Entry Currency",
+   "options": "Currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_vtst",
+   "fieldtype": "Section Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_purchase_amount",
+   "fieldtype": "Currency",
+   "label": "Total Purchase Amount"
+  },
+  {
+   "fieldname": "column_break_awht",
+   "fieldtype": "Column Break"
+  },
+  {
+   "allow_on_submit": 1,
+   "fieldname": "total_landed_cost",
+   "fieldtype": "Currency",
+   "label": "Total Landed Cost"
+  },
+  {
+   "fieldname": "section_break_ilpg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "handler_percentage",
+   "fieldtype": "Percent",
+   "label": "Handler Percentage"
+  },
+  {
+   "fieldname": "items_tab",
+   "fieldtype": "Tab Break",
+   "label": "Item Details"
+  },
+  {
+   "fieldname": "markup_summary_tab",
+   "fieldtype": "Tab Break",
+   "label": "Markup Summary"
+  },
+  {
+   "fieldname": "other_tab",
+   "fieldtype": "Tab Break",
+   "label": "Other"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [
+  {
+   "group": "Shipment Clearing",
+   "link_doctype": "Landed Cost Voucher",
+   "link_fieldname": "shipment_clearing"
+  }
+ ],
+ "modified": "2025-02-19 14:46:55.913225",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Shipment Clearing",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,40 @@
+{
+ "based_on": "creation",
+ "chart_name": "Weekly Tariff Applications",
+ "chart_type": "Sum",
+ "color": "#449CF0",
+ "creation": "2023-07-12 02:59:10.248506",
+ "docstatus": 0,
+ "doctype": "Dashboard Chart",
+ "document_type": "Tariff Application",
+ "dynamic_filters_json": "[]",
+ "filters_json": "[[\"Tariff Application\",\"docstatus\",\"=\",\"1\",false]]",
+ "group_by_type": "Count",
+ "idx": 0,
+ "is_public": 1,
+ "is_standard": 1,
+ "last_synced_on": "2023-07-12 03:02:00.105978",
+ "modified": "2023-07-12 03:02:10.272201",
+ "modified_by": "schoudhary@dexciss.com",
+ "module": "Customs Management",
+ "name": "Weekly Tariff Applications",
+ "number_of_groups": 0,
+ "owner": "schoudhary@dexciss.com",
+ "parent_document_type": "",
+ "roles": [
+  {
+   "role": "Import User"
+  },
+  {
+   "role": "Import Manager"
+  }
+ ],
+ "source": "",
+ "time_interval": "Weekly",
+ "timeseries": 1,
+ "timespan": "Last Year",
+ "type": "Line",
+ "use_report_chart": 0,
+ "value_based_on": "grand_total",
+ "y_axis": []
+}

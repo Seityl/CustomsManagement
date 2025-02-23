@@ -1,0 +1,159 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-04-18 20:39:09.923090",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "reference_doctype",
+  "reference_document",
+  "supplier_name",
+  "section_break_qska",
+  "fob_price",
+  "additional_cost",
+  "freight_cost",
+  "insurance_cost",
+  "total_cost",
+  "column_break_gpkx",
+  "base_fob_price",
+  "base_additional_cost",
+  "base_freight_cost",
+  "base_insurance_cost",
+  "base_total_cost",
+  "section_break_mfpo",
+  "mass_kg"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "reference_doctype",
+   "fieldtype": "Select",
+   "label": "Reference DocType",
+   "options": "\nPurchase Invoice\nPurchase Receipt",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "reference_document",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Reference Document",
+   "options": "reference_doctype",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "fob_price",
+   "fieldtype": "Currency",
+   "label": "FOB Price",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "additional_cost",
+   "fieldtype": "Currency",
+   "label": "Additional Cost",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "total_cost",
+   "fieldtype": "Currency",
+   "label": "Total Cost",
+   "options": "currency",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "mass_kg",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Mass (Kg)",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "base_total_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Total Cost (XCD)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "base_fob_price",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base FOB Price (XCD)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "base_additional_cost",
+   "fieldtype": "Currency",
+   "label": "Base Additional Cost (XCD)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "freight_cost",
+   "fieldtype": "Currency",
+   "label": "Freight Cost",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "base_freight_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Freight Cost (XCD)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "insurance_cost",
+   "fieldtype": "Currency",
+   "label": "Insurance Cost",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "base_insurance_cost",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Insurance Cost (XCD)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_qska",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_gpkx",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_mfpo",
+   "fieldtype": "Section Break"
+  },
+  {
+   "columns": 2,
+   "fieldname": "supplier_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Supplier Name"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-13 14:18:44.425064",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Consolidation",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

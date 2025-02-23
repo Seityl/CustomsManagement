@@ -1,0 +1,357 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:",
+ "creation": "2023-04-17 21:25:03.385454",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "bill_of_lading",
+  "country_of_origin",
+  "manifest_reference_number",
+  "column_break_8zrkz",
+  "currency",
+  "conversion_rate",
+  "purchases_list",
+  "total_item_qty",
+  "total_amount_for_split",
+  "total_base_amount_for_split",
+  "summary_section",
+  "number_of_packages",
+  "office_code",
+  "total_amount",
+  "total_amount_company_currency",
+  "mode_of_transport",
+  "port_location",
+  "column_break_3ut9m",
+  "package_type",
+  "transportation_service",
+  "incoterm",
+  "distribute_charges_based_on",
+  "mass_kg",
+  "section_break_lnnby",
+  "additional_charges",
+  "item_details_tab",
+  "items",
+  "tariff_breakdown_tab",
+  "tariff_breakdown",
+  "tariff_summary_tab",
+  "tariff_number_summary",
+  "consolidation_tab",
+  "consolidation",
+  "tax_tab",
+  "tax_table_section",
+  "tax_info",
+  "total_tax_amount",
+  "base_total_tax_amount",
+  "connections_tab",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "CE.-.{bill_of_lading}.-.##",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "CE.-.{bill_of_lading}.-.##",
+   "print_hide": 1,
+   "read_only": 1,
+   "report_hide": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Jollys Pharmacy Ltd",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "bill_of_lading",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Bill of Lading",
+   "no_copy": 1,
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "country_of_origin",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Country of Origin",
+   "options": "Country",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_8zrkz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "label": "Currency",
+   "options": "Currency",
+   "reqd": 1
+  },
+  {
+   "description": "The rate at which the document currency is converted to the company's base currency",
+   "fieldname": "conversion_rate",
+   "fieldtype": "Float",
+   "label": "Exchange Rate",
+   "options": "Currency",
+   "precision": "9",
+   "reqd": 1
+  },
+  {
+   "fieldname": "summary_section",
+   "fieldtype": "Section Break",
+   "label": "Summary"
+  },
+  {
+   "fieldname": "number_of_packages",
+   "fieldtype": "Int",
+   "label": "Number of Packages"
+  },
+  {
+   "fieldname": "office_code",
+   "fieldtype": "Link",
+   "label": "Office Code",
+   "options": "Office Code"
+  },
+  {
+   "fieldname": "mode_of_transport",
+   "fieldtype": "Select",
+   "label": "Mode of Transport",
+   "options": "Sea\nLand\nWater"
+  },
+  {
+   "fieldname": "port_location",
+   "fieldtype": "Link",
+   "label": "Port Location",
+   "options": "Port Location"
+  },
+  {
+   "fieldname": "package_type",
+   "fieldtype": "Link",
+   "label": "Package Type",
+   "options": "Package Type"
+  },
+  {
+   "fieldname": "transportation_service",
+   "fieldtype": "Link",
+   "label": "Transportation Service",
+   "options": "Transportation Service"
+  },
+  {
+   "fieldname": "distribute_charges_based_on",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Distribute Charges Based On",
+   "options": "Qty\nAmount"
+  },
+  {
+   "fieldname": "additional_charges",
+   "fieldtype": "Table",
+   "label": "Additional Charges",
+   "options": "Landed Cost Taxes and Charges"
+  },
+  {
+   "fieldname": "item_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Item Details"
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Customs Entry Tariff Application Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tariff_number_summary",
+   "fieldtype": "Table",
+   "label": "Tariff Number Summary",
+   "options": "Tariff Number Summary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "consolidation_tab",
+   "fieldtype": "Tab Break",
+   "label": "Consolidation"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Customs Entry",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "consolidation",
+   "fieldtype": "Table",
+   "label": "Consolidation",
+   "options": "Consolidation",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mass_kg",
+   "fieldtype": "Float",
+   "label": "Mass (Kg)",
+   "reqd": 1
+  },
+  {
+   "fieldname": "connections_tab",
+   "fieldtype": "Tab Break",
+   "label": "Connections"
+  },
+  {
+   "fieldname": "incoterm",
+   "fieldtype": "Link",
+   "label": "Incoterm",
+   "options": "Incoterm"
+  },
+  {
+   "fieldname": "total_amount",
+   "fieldtype": "Currency",
+   "label": "Total Amount (CIF)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_amount_company_currency",
+   "fieldtype": "Currency",
+   "label": "Total Amount (CIF XCD)",
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_lnnby",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_3ut9m",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "manifest_reference_number",
+   "fieldtype": "Data",
+   "label": "Manifest Reference Number",
+   "translatable": 1
+  },
+  {
+   "fieldname": "purchases_list",
+   "fieldtype": "JSON",
+   "hidden": 1,
+   "label": "Purchases List"
+  },
+  {
+   "fieldname": "total_item_qty",
+   "fieldtype": "Int",
+   "label": "Total Item qty",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tax_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tax Info"
+  },
+  {
+   "fieldname": "total_tax_amount",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Total Tax Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tax_table_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "tax_info",
+   "fieldtype": "Table",
+   "label": "Tax Info",
+   "options": "Tax",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_amount_for_split",
+   "fieldtype": "Currency",
+   "label": "Total Amount For Split",
+   "read_only": 1
+  },
+  {
+   "fieldname": "total_base_amount_for_split",
+   "fieldtype": "Currency",
+   "label": "Total Base Amount For Split",
+   "read_only": 1
+  },
+  {
+   "fieldname": "base_total_tax_amount",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Base Total Tax Amount",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tariff_summary_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tariff Summary"
+  },
+  {
+   "fieldname": "tariff_breakdown",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Customs Entry Tariff Application Item Display",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tariff_breakdown_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tariff Breakdown"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-02-17 15:33:58.276250",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Customs Entry",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,83 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "prompt",
+ "creation": "2024-02-05 09:41:46.030711",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "ticket_name",
+  "ticket",
+  "item",
+  "error"
+ ],
+ "fields": [
+  {
+   "fieldname": "ticket_name",
+   "fieldtype": "Link",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Ticket name",
+   "options": "CounterPoint Sales_"
+  },
+  {
+   "fieldname": "ticket",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Ticket"
+  },
+  {
+   "fieldname": "error",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Error"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Data",
+   "in_filter": 1,
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "group": "Entries",
+   "link_doctype": "CounterPoint Sales_",
+   "link_fieldname": "name"
+  }
+ ],
+ "modified": "2024-02-06 02:40:55.643054",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Counter Point Sales Log",
+ "naming_rule": "Set by user",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "ticket_name",
+ "track_changes": 1
+}

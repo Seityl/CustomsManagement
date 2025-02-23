@@ -1,0 +1,172 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2024-02-02 03:22:02.734694",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "customer",
+  "customer_name",
+  "item",
+  "item_name",
+  "qty",
+  "ticket",
+  "cost",
+  "price",
+  "ticket_type",
+  "posting_date",
+  "ticket_date",
+  "line_type",
+  "ticket_location",
+  "column_break_cdjpv",
+  "sales_invoice_created",
+  "ticket_error",
+  "custom_mode_of_payment"
+ ],
+ "fields": [
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "TKT.ticket..##",
+   "reqd": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customer"
+  },
+  {
+   "fieldname": "customer_name",
+   "fieldtype": "Data",
+   "label": "Customer Name"
+  },
+  {
+   "fieldname": "item",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Item"
+  },
+  {
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name"
+  },
+  {
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Qty"
+  },
+  {
+   "fieldname": "ticket",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Ticket"
+  },
+  {
+   "fieldname": "cost",
+   "fieldtype": "Currency",
+   "label": "Cost"
+  },
+  {
+   "fieldname": "price",
+   "fieldtype": "Currency",
+   "label": "Price"
+  },
+  {
+   "fieldname": "ticket_type",
+   "fieldtype": "Data",
+   "label": "Ticket Type"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Data",
+   "label": "Posting Date"
+  },
+  {
+   "fieldname": "ticket_date",
+   "fieldtype": "Data",
+   "label": "Ticket Date"
+  },
+  {
+   "fieldname": "line_type",
+   "fieldtype": "Data",
+   "label": "Line Type"
+  },
+  {
+   "fieldname": "ticket_location",
+   "fieldtype": "Data",
+   "label": "Ticket Location"
+  },
+  {
+   "fieldname": "column_break_cdjpv",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "sales_invoice_created",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Sales Invoice Created",
+   "read_only": 1
+  },
+  {
+   "fieldname": "custom_mode_of_payment",
+   "fieldtype": "Data",
+   "label": "Mode of Payment"
+  },
+  {
+   "default": "0",
+   "fieldname": "ticket_error",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Ticket Error"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2024-06-19 14:05:21.889828",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "CounterPoint Sales_",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Sales User",
+   "select": 1,
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

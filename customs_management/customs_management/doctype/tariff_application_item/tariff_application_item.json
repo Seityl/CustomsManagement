@@ -1,0 +1,121 @@
+{
+ "actions": [],
+ "creation": "2023-04-14 18:38:45.659395",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item",
+  "item_name",
+  "recept_item_id",
+  "description",
+  "customs_tariff_number",
+  "qty",
+  "uom",
+  "rate",
+  "amount",
+  "column_break_jnjpe",
+  "duty_exempt",
+  "cost_center"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "item.description",
+   "fieldname": "description",
+   "fieldtype": "Text Editor",
+   "in_list_view": 1,
+   "label": "Description",
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fetch_from": "item.customs_tariff_number",
+   "fieldname": "customs_tariff_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Customs Tariff Number"
+  },
+  {
+   "columns": 1,
+   "fieldname": "qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Qty"
+  },
+  {
+   "columns": 1,
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Rate",
+   "options": "currency"
+  },
+  {
+   "columns": 2,
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Amount",
+   "options": "currency"
+  },
+  {
+   "fieldname": "column_break_jnjpe",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "duty_exempt",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Duty Exempt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fetch_from": "item.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "fieldname": "recept_item_id",
+   "fieldtype": "Data",
+   "label": "Recept Item ID"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2024-03-19 02:03:50.709696",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Tariff Application Item",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

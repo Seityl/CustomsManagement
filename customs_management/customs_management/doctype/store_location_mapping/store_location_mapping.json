@@ -1,0 +1,43 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2024-02-22 03:36:39.222659",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "store_location_mapping"
+ ],
+ "fields": [
+  {
+   "fieldname": "store_location_mapping",
+   "fieldtype": "Table",
+   "label": "Store Location Mapping",
+   "options": "Store Location Mapping Table"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2024-02-22 04:01:00.373034",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Store Location Mapping",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,263 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-05-31 06:45:35.695559",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "auto_submit_created_landed_cost_voucher",
+  "distribute_charges_based_on",
+  "tariff_management_tab",
+  "tariff_management_additional_charges",
+  "customs_entry_tab",
+  "customs_entry_additional_charges",
+  "shipment_clearing_tab",
+  "threshold",
+  "column_break_wrtbn",
+  "bank_expense_account",
+  "handler_expense_account",
+  "default_bank_per",
+  "default_handler_per",
+  "section_break_kfpbt",
+  "tariff_accounts",
+  "section_break_gg0gg",
+  "shipment_clearing_additional_charges",
+  "tab_break_tvcb8",
+  "declarant_representative",
+  "destination_country_code",
+  "declarant_reference_no",
+  "declarant_reference_address",
+  "extended_customs_procedure",
+  "national_customs_procedure",
+  "supplementary_unit_code",
+  "supplementary_unit_name",
+  "supplementary_unit_quantity",
+  "mode_of_payment",
+  "calculation_working_mode",
+  "marks1",
+  "suppliers_document_type_code",
+  "attached_document_code",
+  "sad_flow",
+  "selected_page",
+  "declaration_type",
+  "declaration_gen"
+ ],
+ "fields": [
+  {
+   "fieldname": "shipment_clearing_tab",
+   "fieldtype": "Tab Break",
+   "label": "Shipment Clearing "
+  },
+  {
+   "fieldname": "shipment_clearing_additional_charges",
+   "fieldtype": "Table",
+   "label": "Shipment Clearing Additional Charges",
+   "options": "Shipment Additional Charges"
+  },
+  {
+   "fieldname": "customs_entry_tab",
+   "fieldtype": "Tab Break",
+   "label": "Customs Entry"
+  },
+  {
+   "fieldname": "customs_entry_additional_charges",
+   "fieldtype": "Table",
+   "label": "Customs Entry Additional Charges",
+   "options": "Custom Additional Charges"
+  },
+  {
+   "fieldname": "tariff_management_tab",
+   "fieldtype": "Tab Break",
+   "label": "Tariff Application"
+  },
+  {
+   "fieldname": "tariff_management_additional_charges",
+   "fieldtype": "Table",
+   "label": "Tariff Application Additional Charges",
+   "options": "Tariff Additional Charges"
+  },
+  {
+   "default": "0",
+   "fieldname": "auto_submit_created_landed_cost_voucher",
+   "fieldtype": "Check",
+   "label": "Auto submit created Landed cost voucher"
+  },
+  {
+   "description": "If the newly calculated price is within this threshold, then the system will automatically set the updated price as the current price. If it crosses this threshold then the price for that item will be revised on shipment clearing.",
+   "fieldname": "threshold",
+   "fieldtype": "Percent",
+   "in_list_view": 1,
+   "label": "Price Difference Threshold (%)"
+  },
+  {
+   "fieldname": "tab_break_tvcb8",
+   "fieldtype": "Tab Break",
+   "label": "XML Details"
+  },
+  {
+   "fieldname": "declarant_representative",
+   "fieldtype": "Data",
+   "label": "Declarant Representative"
+  },
+  {
+   "fieldname": "declarant_reference_no",
+   "fieldtype": "Data",
+   "label": "Declarant Reference No"
+  },
+  {
+   "fieldname": "extended_customs_procedure",
+   "fieldtype": "Data",
+   "label": "Extended Customs Procedure"
+  },
+  {
+   "fieldname": "national_customs_procedure",
+   "fieldtype": "Data",
+   "label": "National Customs Procedure"
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "fieldtype": "Link",
+   "label": "Mode Of Payment",
+   "options": "Mode of Payment"
+  },
+  {
+   "fieldname": "column_break_wrtbn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "bank_expense_account",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Bank Expense Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "handler_expense_account",
+   "fieldtype": "Link",
+   "hidden": 1,
+   "label": "Handler Expense Account",
+   "options": "Account"
+  },
+  {
+   "fieldname": "section_break_gg0gg",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_kfpbt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "tariff_accounts",
+   "fieldtype": "Table",
+   "label": "Tariff Accounts",
+   "options": "Tariff Account Items"
+  },
+  {
+   "default": "Qty",
+   "fieldname": "distribute_charges_based_on",
+   "fieldtype": "Select",
+   "label": "Distribute Charges Based On",
+   "options": "Qty\nAmount"
+  },
+  {
+   "fieldname": "default_bank_per",
+   "fieldtype": "Percent",
+   "label": "Default Bank %"
+  },
+  {
+   "fieldname": "default_handler_per",
+   "fieldtype": "Percent",
+   "label": "Default Handler %"
+  },
+  {
+   "fieldname": "declarant_reference_address",
+   "fieldtype": "Small Text",
+   "label": "Declarant Reference Address"
+  },
+  {
+   "fieldname": "destination_country_code",
+   "fieldtype": "Data",
+   "label": "Destination Country Code"
+  },
+  {
+   "fieldname": "calculation_working_mode",
+   "fieldtype": "Data",
+   "label": "Calculation Working Mode"
+  },
+  {
+   "fieldname": "supplementary_unit_code",
+   "fieldtype": "Data",
+   "label": "Supplementary Unit Code"
+  },
+  {
+   "fieldname": "supplementary_unit_name",
+   "fieldtype": "Data",
+   "label": "Supplementary Unit Name"
+  },
+  {
+   "fieldname": "supplementary_unit_quantity",
+   "fieldtype": "Data",
+   "label": "Supplementary Unit Quantity"
+  },
+  {
+   "fieldname": "marks1",
+   "fieldtype": "Data",
+   "label": "Marks 1"
+  },
+  {
+   "fieldname": "suppliers_document_type_code",
+   "fieldtype": "Data",
+   "label": "Suppliers Document Type Code"
+  },
+  {
+   "fieldname": "attached_document_code",
+   "fieldtype": "Data",
+   "label": "Attached Document Code"
+  },
+  {
+   "fieldname": "sad_flow",
+   "fieldtype": "Data",
+   "label": "Sad Flow"
+  },
+  {
+   "fieldname": "selected_page",
+   "fieldtype": "Data",
+   "label": "Selected Page"
+  },
+  {
+   "fieldname": "declaration_type",
+   "fieldtype": "Data",
+   "label": "Declaration Type"
+  },
+  {
+   "fieldname": "declaration_gen",
+   "fieldtype": "Data",
+   "label": "Declaration Gen"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-02-22 13:09:53.822508",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Customs Management Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

@@ -1,0 +1,96 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-04-14 18:40:15.236070",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "customs_tariff_number",
+  "column_break_fqpz",
+  "description",
+  "section_break_ilha",
+  "duty_percentage",
+  "section_break_gplu",
+  "amount",
+  "duty_amount",
+  "column_break_owil",
+  "base_amount",
+  "base_duty_amount"
+ ],
+ "fields": [
+  {
+   "fieldname": "customs_tariff_number",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Customs Tariff Number",
+   "no_copy": 1,
+   "options": "Customs Tariff Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "duty_amount",
+   "fieldtype": "Currency",
+   "label": "Duty Amount",
+   "no_copy": 1
+  },
+  {
+   "fetch_from": "customs_tariff_number.description",
+   "fieldname": "description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Description"
+  },
+  {
+   "fieldname": "base_duty_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Base Duty Amount",
+   "options": "currency"
+  },
+  {
+   "fieldname": "duty_percentage",
+   "fieldtype": "Percent",
+   "label": "Duty Percentage"
+  },
+  {
+   "fieldname": "column_break_fqpz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_ilha",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "section_break_gplu",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_owil",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "fieldname": "base_amount",
+   "fieldtype": "Currency",
+   "label": "Base Amount"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-02-14 14:34:02.553688",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Tariff Number Summary",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
