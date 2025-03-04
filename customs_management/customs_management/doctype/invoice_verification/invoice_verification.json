@@ -4,7 +4,7 @@
  "autoname": "naming_series:",
  "creation": "2023-04-14 18:40:20.333690",
  "default_view": "List",
- "description": "The tariff application form helps segregation of items based on Tariff Codes & also helps in the application for additional charges to adjust the landed cost of the procured items accordingly.",
+ "description": "The Verify Invoice form helps segregation of items based on Tariff Codes & also helps in the application for additional charges to adjust the landed cost of the procured items accordingly.",
  "doctype": "DocType",
  "editable_grid": 1,
  "engine": "InnoDB",
@@ -36,7 +36,7 @@
    "fieldname": "naming_series",
    "fieldtype": "Select",
    "label": "Naming Series",
-   "options": "TAF-.WW..###",
+   "options": "INV-VER-.WW..###",
    "print_hide": 1,
    "reqd": 1
   },
@@ -132,7 +132,7 @@
    "fieldname": "items",
    "fieldtype": "Table",
    "label": "Items",
-   "options": "Tariff Application Item"
+   "options": "Invoice Verification Item"
   },
   {
    "fieldname": "tariff_number_summary",
@@ -169,7 +169,7 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "Tariff Application",
+   "options": "Invoice Verification",
    "print_hide": 1,
    "read_only": 1
   },
@@ -200,17 +200,11 @@
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
- "links": [
-  {
-   "group": "Custom Management",
-   "link_doctype": "Landed Cost Voucher",
-   "link_fieldname": "tariff_application"
-  }
- ],
- "modified": "2024-05-30 02:47:26.406983",
+ "links": [],
+ "modified": "2025-02-24 00:43:12.285525",
  "modified_by": "Administrator",
  "module": "Customs Management",
- "name": "Tariff Application",
+ "name": "Invoice Verification",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [

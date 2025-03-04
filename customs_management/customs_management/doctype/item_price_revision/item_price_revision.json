@@ -10,7 +10,7 @@
  "field_order": [
   "naming_series",
   "price_list",
-  "shipment_clearing",
+  "costing",
   "get_markup_summary",
   "markup_summary",
   "amended_from"
@@ -29,10 +29,10 @@
    "options": "Price List"
   },
   {
-   "fieldname": "shipment_clearing",
+   "fieldname": "costing",
    "fieldtype": "Link",
-   "label": "Shipment Clearing",
-   "options": "Shipment Clearing"
+   "label": "Costing",
+   "options": "Costing"
   },
   {
    "fieldname": "get_markup_summary",

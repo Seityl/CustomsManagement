@@ -36,7 +36,7 @@ def consolidate_by_item(data):
 	print("consolidated items tariff app items",dic)
 	return list(dic.values())
 
-class TariffApplication(Document):
+class InvoiceVerification(Document):
 	def before_save(self):
 		total=0.0
 		for item in self.items:
@@ -372,7 +372,7 @@ class TariffApplication(Document):
 			print("Afetr Purchase receipt")
 
 			print("After Items")
-			landed_cost_voucher.tariff_application=self.name
+			# landed_cost_voucher.invoice_verification=self.name
 			for row in self.additional_charges:
 				landed_cost_voucher.append('taxes',{
 						'expense_account' : row.expense_account,
@@ -390,7 +390,7 @@ class TariffApplication(Document):
 				landed_cost_voucher.submit()
 
 		#add check (tariff application created)box tick in purchase receipt/invoice on submit
-		frappe.db.set_value(self.reference_doctype, self.reference_document, 'custom_tariff_application_created', '1')
+		frappe.db.set_value(self.reference_doctype, self.reference_document, 'custom_invoice_verification_created', '1')
 
 			
 			

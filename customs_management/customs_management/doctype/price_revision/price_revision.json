@@ -17,6 +17,7 @@
   "stock_qty",
   "stock_uom",
   "costing_details_section",
+  "price",
   "base",
   "column_break_pfrjr",
   "markup_percent",
@@ -32,7 +33,7 @@
   "updated_each_price",
   "updated_case_price",
   "section_break_opygg",
-  "approved",
+  "approve",
   "price_approved"
  ],
  "fields": [
@@ -91,15 +92,6 @@
    "fieldtype": "Percent",
    "label": " Difference( in %)",
    "read_only": 1
-  },
-  {
-   "allow_on_submit": 1,
-   "default": "0",
-   "depends_on": "eval:doc.price_approved != 1",
-   "fieldname": "approved",
-   "fieldtype": "Button",
-   "in_list_view": 1,
-   "label": "Approved"
   },
   {
    "fieldname": "column_break_snej6",
@@ -166,7 +158,6 @@
    "columns": 1,
    "fieldname": "base",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Base",
    "read_only": 1
   },
@@ -181,7 +172,6 @@
    "columns": 1,
    "fieldname": "markup_value",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Markup Value",
    "read_only": 1
   },
@@ -213,12 +203,29 @@
    "fieldname": "updated_each_price",
    "fieldtype": "Currency",
    "label": "Updated Each Price"
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "depends_on": "eval:doc.price_approved != 1",
+   "fieldname": "approve",
+   "fieldtype": "Button",
+   "in_list_view": 1,
+   "label": "Approve"
+  },
+  {
+   "columns": 1,
+   "fieldname": "price",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Price",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-22 12:58:58.299704",
+ "modified": "2025-02-24 14:42:36.767006",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Price Revision",

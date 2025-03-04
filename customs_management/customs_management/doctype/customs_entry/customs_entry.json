@@ -1,10 +1,10 @@
 {
  "actions": [],
- "allow_rename": 1,
  "autoname": "naming_series:",
  "creation": "2023-04-17 21:25:03.385454",
  "default_view": "List",
  "doctype": "DocType",
+ "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -18,18 +18,20 @@
   "conversion_rate",
   "purchases_list",
   "total_item_qty",
-  "total_amount_for_split",
-  "total_base_amount_for_split",
   "summary_section",
   "number_of_packages",
   "office_code",
   "total_amount",
-  "total_amount_company_currency",
+  "total_invoice",
+  "total_amount_for_split",
   "mode_of_transport",
   "port_location",
   "column_break_3ut9m",
   "package_type",
   "transportation_service",
+  "total_amount_company_currency",
+  "base_total_invoice",
+  "total_base_amount_for_split",
   "incoterm",
   "distribute_charges_based_on",
   "mass_kg",
@@ -64,11 +66,9 @@
    "reqd": 1
   },
   {
-   "default": "Jollys Pharmacy Ltd",
+   "default": "Jollys Pharmacy Limited",
    "fieldname": "company",
    "fieldtype": "Link",
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Company",
    "options": "Company",
    "read_only": 1,
@@ -90,6 +90,7 @@
    "fieldtype": "Link",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Country of Origin",
    "options": "Country",
    "reqd": 1
@@ -103,6 +104,7 @@
    "fieldtype": "Link",
    "in_filter": 1,
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Currency",
    "options": "Currency",
    "reqd": 1
@@ -229,13 +231,13 @@
   {
    "fieldname": "total_amount",
    "fieldtype": "Currency",
-   "label": "Total Amount (CIF)",
+   "label": "Cost, Insurance, & Freight",
    "read_only": 1
   },
   {
    "fieldname": "total_amount_company_currency",
    "fieldtype": "Currency",
-   "label": "Total Amount (CIF XCD)",
+   "label": "Cost, Insurance, & Freight (XCD)",
    "read_only": 1
   },
   {
@@ -322,12 +324,24 @@
    "fieldname": "tariff_breakdown_tab",
    "fieldtype": "Tab Break",
    "label": "Tariff Breakdown"
+  },
+  {
+   "fieldname": "total_invoice",
+   "fieldtype": "Currency",
+   "label": "Total Invoice",
+   "read_only": 1
+  },
+  {
+   "fieldname": "base_total_invoice",
+   "fieldtype": "Currency",
+   "label": "Total Invoice (XCD)",
+   "read_only": 1
   }
  ],
- "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-17 15:33:58.276250",
+ "make_attachments_public": 1,
+ "modified": "2025-02-25 11:56:35.603976",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Customs Entry",
@@ -348,10 +362,52 @@
    "share": 1,
    "submit": 1,
    "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Import Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Import User",
+   "share": 1,
+   "write": 1
   }
- ],
+],
+
+    "custom_perms": [
+        {
+            "role": "Import Manager",
+            "permlevel": 0,
+            "name": "Customs Entry",
+            "read": 1,
+            "write": 1,
+            "create": 1,
+            "submit": 1,
+            "cancel": 1,
+            "delete": 1
+        }
+    ],
+ "search_fields": "bill_of_lading",
+ "show_name_in_global_search": 1,
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "bill_of_lading",
  "track_changes": 1
 }

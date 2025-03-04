@@ -66,6 +66,7 @@ frappe.ui.form.on('Customs Entry', {
 								callback: function (r) {
                                     frm.refresh();
                                     frm.dirty();
+                                    frm.save();
 								}
 							});
 						}
@@ -226,13 +227,23 @@ frappe.ui.form.on('Customs Entry', {
 
         let description_cache = {};  // Cache to store fetched tariff number descriptions
 
-        // Custom HTML Tariff Breakdown Table
         frm.fields_dict.tariff_breakdown.grid.update_footer = function() {
-            let table_rows = '';
-            let previous_tariff_number = null;
-            let tariff_subtotal = 0;
-
-            // Function to fetch tariff description
+            // Group items by tariff number
+            let groups = {};
+            frm.doc.items.forEach(row => {
+                let tariff_number = row.customs_tariff_number || 'Unknown';
+                if (!groups[tariff_number]) {
+                    groups[tariff_number] = [];
+                }
+                groups[tariff_number].push(row);
+            });
+        
+            // Get all unique tariff numbers
+            let tariffNumbers = Object.keys(groups);
+            let table_rows = "";
+            let processedGroups = 0;
+        
+            // Function to fetch tariff description for a tariff number
             let fetch_tariff_desc = (tariff_number, callback) => {
                 if (description_cache[tariff_number]) {
                     callback(description_cache[tariff_number]);
@@ -254,68 +265,52 @@ frappe.ui.form.on('Customs Entry', {
                     });
                 }
             };
-
-            let row_count = frm.doc.items.length;
-            let processed_rows = 0;
-
-            frm.doc.items.forEach((row, idx) => {
-                let item_code = row.item || '';
-                let description = row.description || '';
-                let qty = row.qty || 0;
-                let uom = row.uom || '';
-                let base_amount = row.base_amount || 0;
-                
-                let tariff_number = row.customs_tariff_number || 'Unknown';
-
+        
+            // Iterate over each unique tariff number group
+            tariffNumbers.forEach(tariff_number => {
                 fetch_tariff_desc(tariff_number, function(tariff_desc) {
-                    if (previous_tariff_number !== tariff_number) {
-                        if (previous_tariff_number !== null) {
-                            table_rows += `
-                                <tr style="font-weight: bold; border-top: 2px solid var(--border-color, #dee2e6);">
-                                    <td colspan="4" style="text-align: right;">SUBTOTAL :</td>
-                                    <td style="text-align: right;">$ ${tariff_subtotal.toFixed(2)}</td>
-                                </tr>
-                            `;
-                            tariff_subtotal = 0;
-                        }
-                        table_rows += `
-                            <tr style="font-weight: bold; border-top: 3px solid var(--border-color, #dee2e6); background-color: var(--group-bg, #e9ecef); color: var(--group-text, #333); padding: 5px 0;">
-                                <td colspan="5" style="text-align: center;">
-                                    DUTY GROUP - ${tariff_number} - ${tariff_desc}
-                                </td>
-                            </tr>
-                        `;
-                    }
-
-                    tariff_subtotal += base_amount;
+                    // Add group header row
                     table_rows += `
-                        <tr>
-                            <td>${item_code}</td>
-                            <td>${description}</td>
-                            <td>${qty}</td>
-                            <td>${uom}</td>
-                            <td style="text-align: right;">$ ${base_amount.toFixed(2)}</td>
+                        <tr style="font-weight: bold; border-top: 3px solid var(--border-color, #dee2e6); background-color: var(--group-bg, #e9ecef); color: var(--group-text, #333); padding: 5px 0;">
+                            <td colspan="5" style="text-align: center;">
+                                DUTY GROUP - ${tariff_number} - ${tariff_desc}
+                            </td>
                         </tr>
                     `;
-                    previous_tariff_number = tariff_number;
-
-                    if (idx === frm.doc.items.length - 1) {
+                    let groupSubtotal = 0;
+                    // Process each item in the current group
+                    groups[tariff_number].forEach(row => {
+                        let item_code = row.item || '';
+                        let description = row.description || '';
+                        let qty = row.qty || 0;
+                        let uom = row.uom || '';
+                        let base_amount = row.base_amount || 0;
+                        groupSubtotal += base_amount;
                         table_rows += `
-                            <tr style="font-weight: bold; border-top: 2px solid var(--border-color, #dee2e6);">
-                                <td colspan="4" style="text-align: right;">SUBTOTAL :</td>
-                                <td style="text-align: right;">$ ${tariff_subtotal.toFixed(2)}</td>
+                            <tr>
+                                <td>${item_code}</td>
+                                <td>${description}</td>
+                                <td>${qty}</td>
+                                <td>${uom}</td>
+                                <td style="text-align: right;">$ ${base_amount.toFixed(2)}</td>
                             </tr>
                         `;
-                    }
-
-                    processed_rows++;
-                    if (processed_rows === row_count) {
+                    });
+                    // Add subtotal row for this group
+                    table_rows += `
+                        <tr style="font-weight: bold; border-top: 2px solid var(--border-color, #dee2e6);">
+                            <td colspan="4" style="text-align: right;">SUBTOTAL :</td>
+                            <td style="text-align: right;">$ ${groupSubtotal.toFixed(2)}</td>
+                        </tr>
+                    `;
+                    processedGroups++;
+                    if (processedGroups === tariffNumbers.length) {
                         renderTable(table_rows);
                     }
                 });
             });
-
-            // Function to render the table with subtle styling
+        
+            // Function to render the final table
             let renderTable = (table_rows) => {
                 $(frm.fields_dict.tariff_breakdown.grid.wrapper).hide();
                 let parent = $(frm.fields_dict.tariff_breakdown.grid.wrapper).parent();
@@ -342,7 +337,7 @@ frappe.ui.form.on('Customs Entry', {
                 `);
             };
         };
-
+        
         frm.fields_dict.tariff_breakdown.grid.update_footer();
 
         // Custom HTML Tariff Number Summary Table

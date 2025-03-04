@@ -1,18 +1,16 @@
-from . import __version__ as app_version
-
-app_name = "customs_management"
-app_title = "Customs Management"
-app_publisher = "Sudeep Kulkarni"
-app_description = "Customs Management"
-app_email = "asoral@dexiss.com"
-app_license = "MIT"
+app_name = 'customs_management'
+app_title = 'Customs Management'
+app_publisher = 'Jollys Pharmacy Limited'
+app_description = 'Facilitates invoice verification, customs entry creation, and item pricing.'
+app_email = 'cdgrant@jollysonline.com'
+app_license = 'MIT'
 
 # Includes in <head>
 # ------------------
 
 # include js, css files in header of desk.html
 # app_include_css = "public/css/custom.css"
-# app_include_js = "/assets/customs_management/js/customs_management.js"
+# app_include_js = "/assets/customs_entry/js/customs_entry.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/customs_management/css/customs_management.css"
@@ -29,14 +27,14 @@ app_license = "MIT"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-doctype_js = {"Customs Tariff Number" : "public/js/custom_Customs Tariff Number.js",
-              "Pick List" : "public/js/custom_Pick List.js",
-              "Sales Order": "public/js/custom_Sales Order.js",
-              "Sales Invoice": "public/js/custom_Sales Invoice.js",
-              "Material Request": "public/js/custom_Material Request.js",
-              "Overtime Request":"public/js/custom_Otr.js",
-              "Salary Slip":"public/js/Salary Slip.js",
-              }
+
+doctype_js = {
+    'Customs Tariff Number' : 'public/js/custom_Customs Tariff Number.js',
+    'Material Request': 'public/js/custom_Material Request.js',
+    'Sales Order': 'public/js/custom_Sales Order.js',
+    'Pick List' : 'public/js/custom_Pick List.js'
+}
+
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -62,6 +60,7 @@ doctype_js = {"Customs Tariff Number" : "public/js/custom_Customs Tariff Number.
 # ----------
 
 # add methods and filters to jinja environment
+
 jinja = {
 	"methods": [
         # "customs_management.customs_management.doctype.customs_entry.customs_entry.get_unique_invoice",
@@ -135,64 +134,62 @@ doc_events = {
 	"Pick List": {
 		"before_save": "customs_management.api.sort_pick_list",
 		# "on_submit": "customs_management.api.create_grouping",
-		
 	},
-    "Purchase Receipt":{
+    "Purchase Receipt": {
         "on_submit": "customs_management.api.create_tariffapp",
         "on_update_after_submit": "customs_management.api.create_tariffapp",
     },
-    "Purchase Invoice":{
+    "Purchase Invoice": {
         "on_submit": "customs_management.api.create_tariffapp",
         "on_update_after_submit": "customs_management.api.create_tariffapp",
     },
-    "Salary Slip":{
+    "Salary Slip": {
         "before_save": "customs_management.api.calculate_working_salaryslip",
         
     },
-     "Stock Entry":{
+     "Stock Entry": {
         "on_submit": "customs_management.api.set_stock_status",
         
     },
-    "Landed Cost Voucher":{
+    "Landed Cost Voucher": {
         "on_submit":"customs_management.api.fix_taxes_and_charges"
     }
-	
 }
 
 # Scheduled Tasks
 # ---------------
 
-scheduler_events = {
-#	"all": [
-#		"customs_management.tasks.all"
-#	],
-#	"daily": [
-#		"customs_management.tasks.daily"
-#	],
-#	"hourly": [
-#		"customs_management.tasks.hourly"
-#	],
-#	"weekly": [
-#		"customs_management.tasks.weekly"
-#	],
-#	"monthly": [
-#		"customs_management.tasks.monthly"
-#	],
-	"cron": {
-        "*/3 * * * *": [
-            # "customs_management.api.create_sales_invoice",
-            # "customs_management.api.schedule_create_sales_invoice",
-            # "customs_management.api.schedule_create_sales_invoice_from_ticket"
+# scheduler_events = {
+# 	"all": [
+# 		"customs_management.tasks.all"
+# 	],
+# 	"daily": [
+# 		"customs_management.tasks.daily"
+# 	],
+# 	"hourly": [
+# 		"customs_management.tasks.hourly"
+# 	],
+# 	"weekly": [
+# 		"customs_management.tasks.weekly"
+# 	],
+# 	"monthly": [
+# 		"customs_management.tasks.monthly"
+# 	],
+# 	"cron": {
+#         "*/3 * * * *": [
+#             "customs_management.api.create_sales_invoice",
+#             "customs_management.api.schedule_create_sales_invoice",
+#             "customs_management.api.schedule_create_sales_invoice_from_ticket"
 
-        ],
-        "0 0 * * *": [
-            "customs_management.api.send_outstanding_material_request_emails"
-        ],
-        # "0 14 * * *": [
-        #   "customs_management.api.schedule_reorder_item"
-        # ]
-    }
-}
+#         ],
+#         "0 0 * * *": [
+#             "customs_management.api.send_outstanding_material_request_emails"
+#         ],
+#         "0 14 * * *": [
+#           "customs_management.api.schedule_reorder_item"
+#         ]
+#     }
+# }
 
 # Testing
 # -------
@@ -281,10 +278,9 @@ fixtures = [
 		{"dt":"Custom Field", "filters": [["name", "in",(
             "Company-custom_code",
             "Landed Cost Taxes and Charges-custom_type",
-            "Purchase Receipt-custom_tariff_application_created",
-            "Purchase Invoice-custom_tariff_application_created",
+            "Purchase Receipt-custom_invoice_verification_created",
             "Purchase Receipt-custom_customs_entry_created",
-            "Purchase Invoice-custom_customs_entry_created",
+            "Purchase Receipt-custom_invoice_number",
             "Customs Tariff Number-custom_tariff_details",
             "Customs Tariff Number-custom_duty_percentage",
             "Customs Tariff Number-custom_service_charge_percentage",
@@ -295,25 +291,11 @@ fixtures = [
             "Customs Tariff Number-custom_column_break_lsdr6",
             "Customs Tariff Number-custom_markup_percentage",
             "Customs Tariff Number-custom_excise_percentage",
-            "Pick List-custom_item_group",
-            "Purchase Receipt-custom_invoice_number",
-            "Purchase Invoice-custom_invoice_number",
             "Customs Tariff Number-custom_precision",
+            "Pick List-custom_item_group",
+            "Purchase Invoice-custom_invoice_number",
             "Sales Invoice-custom_ticket",
-            "Sales Invoice-custom_customs_clearence_office",
-            "Sales Invoice-custom_declaration_procedure",
-            "Sales Invoice-custom_extended_customs",
-            "Sales Invoice-custom_country_first_destination",
-            "Sales Invoice-custom_country_of_origin",
-            "Sales Invoice-custom_column_break_evlqw",
-            "Sales Invoice-custom_transport_service",
-            "Sales Invoice-custom_number_of_packages",
-            "Sales Invoice-custom_package_type",
-            "Sales Invoice-custom_gross_weight",
-            "Sales Invoice-custom_export",
-            "Sales Invoice-custom_national_customs_procedure",
             "Sales Invoice-custom_invoice_number",
-            "Sales Invoice-custom_xml",
             "Pick List-custom_edit_item",
             "Salary Structure-custom_salary_slip_based_on_worked_hours",
             "Salary Structure Assignment-custom_hourly_rate",
@@ -322,20 +304,19 @@ fixtures = [
             "Employee Grade-custom_hd_multiplier",
             "Overtime Request-custom_manual_ot_type",
             "Overtime Request-custom_ot_multiplier_type",
-
             "Landed Cost Taxes and Charges-custom_foreign_currency",
-
+            "Landed Cost"
             "Material Request-custom_auto_reorder"
         )]]},
-
         {"dt":"Property Setter", "filters": [["name", "in",(
             "Purchase Receipt-main-title_field",
             "Purchase Receipt-main-show_title_field_in_link",
             "Purchase Invoice-main-title_field",
             "Purchase Invoice-main-show_title_field_in_link",
-            "Tariff Application-main-default_print_format",
-            "Shipment Clearing-main-default_print_format",
-        )]]}
+            "Invoice Verification-main-default_print_format",
+            "Costing-main-default_print_format",
+        )]]},
+        {"dt": "Workspace", "filters": [["module", "=", "customs_management"]]}
 ]
 
 # fixtures = [“Workflow”,“Workflow State”,“Print Format”,“Notification”,“Workflow Action Master”,

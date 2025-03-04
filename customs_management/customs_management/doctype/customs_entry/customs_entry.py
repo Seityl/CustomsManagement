@@ -145,28 +145,38 @@ class CustomsEntry(Document):
 			insurance = self.get_insurance()
 
 			totals = {
+				'total_amount_company_currency': 0,
 				'total_base_amount_for_split': 0,
 				'total_amount_for_split': 0,
+				'base_total_invoice': 0,
 				'total_items_qty': 0,
-				'total_amount': 0,
-				'total_amount_company_currency': 0
+				'total_invoice': 0,
+				'total_amount': 0
 			}
 
 			for pr in selections:
 				try:
-					self.process_purchase_receipt(pr, conversion_rate, freight, insurance)
-					totals = self.update_overall_totals(frappe.get_doc('Purchase Receipt', pr), totals)
+					try:
+						purchase_receipt = frappe.get_doc('Purchase Receipt', pr)
+
+					except frappe.DoesNotExistError:
+						frappe.throw(_("Purchase Receipt {0} not found").format(pr))
+
+					self.process_purchase_receipt(purchase_receipt, conversion_rate, freight, insurance)
+					totals = self.update_overall_totals(purchase_receipt, totals)
 
 				except Exception as e:
 					frappe.log_error(frappe.get_traceback(), _("Purchase Receipt Processing Error"))
 					frappe.throw(_("Error processing {0}: {1}").format(pr, str(e)))
 
 
-			self.total_amount_for_split = totals['total_amount_for_split']
-			self.total_base_amount_for_split = totals['total_base_amount_for_split']
+			self.total_amount_for_split = round((totals['total_amount_for_split']), 2)
+			self.total_base_amount_for_split = round((totals['total_base_amount_for_split']), 2)
 			self.total_item_qty = totals['total_items_qty']
-			# self.total_amount = totals['total_amount']
-			# self.total_amount_company_currency = totals['total_amount_company_currency']
+			self.total_amount = round((totals['total_amount'] + self.get_freight() + self.get_insurance()), 2)
+			self.total_amount_company_currency = round(totals['total_amount_company_currency'] + (self.conversion_rate * self.get_freight()) + (self.conversion_rate * self.get_insurance()), 2)
+			self.total_invoice = totals['total_invoice']
+			self.base_total_invoice = totals['base_total_invoice']
 
 			self.set_item_factors()
 
@@ -181,6 +191,8 @@ class CustomsEntry(Document):
 		self.total_amount_company_currency = 0
 		self.total_base_amount_for_split = 0
 		self.total_amount_for_split = 0
+		self.base_total_invoice = 0
+		self.total_invoice = 0
 		self.total_amount = 0
 
 		self.tariff_number_summary = []
@@ -263,10 +275,10 @@ class CustomsEntry(Document):
 		return frappe.db.get_value('Country', self.country_of_origin, 'code').upper()
 
 	def get_total_cost(self):
-		return str(self.get_freight() + self.get_insurance())
+		return str(round((self.conversion_rate * self.get_freight()) + (self.conversion_rate * self.get_insurance()), 2))
 
 	def get_total_cif(self):
-		return str(self.total_amount_company_currency + self.get_freight() + self.get_insurance())
+		return str(self.total_amount_company_currency)
 		
 	def get_main_tariff(self):
 		return self.items[0].customs_tariff_number.replace('.', '')[:-1]
@@ -314,8 +326,11 @@ class CustomsEntry(Document):
 	@frappe.whitelist()
 	def get_exchange_rate(self):
 		try:
-			company_currency = frappe.get_value('Company', {'name': self.company}, ['default_currency'])
+			if not self.company:
+				return
 
+			company_currency = frappe.db.get_value('Company', {'name': self.company}, ['default_currency'])
+        
 			if not company_currency:
 				frappe.throw(_("Default currency not set for company {0}").format(self.company))
        
@@ -344,13 +359,7 @@ class CustomsEntry(Document):
 			frappe.log_error(frappe.get_traceback(), _("Default Charges Error"))
 			frappe.throw(_("Error loading default charges: {0}").format(str(e)))
 
-	def process_purchase_receipt(self, pr_name, conversion_rate, freight, insurance):
-		try:
-			purchase_receipt = frappe.get_doc('Purchase Receipt', pr_name)
-
-		except frappe.DoesNotExistError:
-			frappe.throw(_("Purchase Receipt {0} not found").format(pr_name))
-		
+	def process_purchase_receipt(self, purchase_receipt, conversion_rate, freight, insurance):
 		if purchase_receipt.supplier_address:
 			duty_exempt = frappe.db.get_value('Address', {'name': purchase_receipt.supplier_address}, 'duty_exempt') or False
 
@@ -378,7 +387,7 @@ class CustomsEntry(Document):
 
 			except Exception as e:
 				frappe.log_error(frappe.get_traceback(), _("HTML Parsing Error"))
-				frappe.throw(_("Error parsing charges for {0}").format(pr_name))
+				frappe.throw(_("Error parsing charges for {0}").format(purchase_receipt.name))
 
 		for item in purchase_receipt.items:
 			try:
@@ -493,8 +502,10 @@ class CustomsEntry(Document):
 			totals['total_amount_for_split'] += pr.net_total
 			totals['total_base_amount_for_split'] += pr.base_net_total
 			totals['total_items_qty'] += pr.total_qty
-			# totals['total_amount'] += pr.net_total
-			# totals['total_amount_company_currency'] += pr.base_net_total
+			totals['total_amount'] += pr.grand_total
+			totals['total_amount_company_currency'] += pr.base_grand_total
+			totals['total_invoice'] += pr.grand_total
+			totals['base_total_invoice'] += pr.base_grand_total
 
 			return totals
 
@@ -617,7 +628,7 @@ class CustomsEntry(Document):
 						'supplier_name': pr_doc.supplier_name,
 						'fob_price': fob,
 						'base_fob_price': round((fob * self.conversion_rate), 2),
-						'additional_cost': (additional_cost),
+						'additional_cost': round((additional_cost * self.conversion_rate), 2),
 						'freight_cost': round((freight * self.conversion_rate), 2),
 						'insurance_cost': round((insurance * self.conversion_rate), 2),
 						'total_cost': total_cost,
@@ -736,11 +747,9 @@ def prettify(elem):
 def build_export_release(doc):
     export_release = ET.Element('Export_release')
     
-    date_exit = ET.SubElement(export_release, 'Date_of_exit')
-    date_exit.text = nowdate()
+    ET.SubElement(export_release, 'Date_of_exit')
 
-    time_exit = ET.SubElement(export_release, 'Time_of_exit')
-    time_exit.text = nowtime()
+    ET.SubElement(export_release, 'Time_of_exit')
     
     office_code = ET.SubElement(export_release, 'Actual_office_of_exit_code')
     office_code.text = doc.office_code
@@ -775,8 +784,7 @@ def build_property(doc, settings):
     place_decl = ET.SubElement(property_elem, 'Place_of_declaration')
     place_decl.text = doc.incoterm
     
-    date_decl = ET.SubElement(property_elem, 'Date_of_declaration')
-    date_decl.text = nowdate()
+    ET.SubElement(property_elem, 'Date_of_declaration')
     
     selected_page = ET.SubElement(property_elem, 'Selected_page')
     selected_page.text = settings.selected_page
@@ -813,8 +821,7 @@ def build_identification(doc, settings):
 
 	ET.SubElement(registration, 'Number')
 
-	reg_date = ET.SubElement(registration, 'Date')
-	reg_date.text = nowdate()
+	ET.SubElement(registration, 'Date')
 
 	assessment = ET.SubElement(identification, 'Assessment')
 
@@ -824,8 +831,7 @@ def build_identification(doc, settings):
 
 	ET.SubElement(assessment, 'Number')
 
-	assess_date = ET.SubElement(assessment, 'Date')
-	assess_date.text = nowdate()
+	ET.SubElement(assessment, 'Date')
 
 	receipt = ET.SubElement(identification, 'Receipt')
 
@@ -835,8 +841,7 @@ def build_identification(doc, settings):
 
 	ET.SubElement(receipt, 'Number')
 
-	receipt_date = ET.SubElement(receipt, 'Date')
-	receipt_date.text = nowdate()
+	ET.SubElement(receipt, 'Date')
 
 	return identification
 
@@ -1011,7 +1016,7 @@ def build_financial(doc, settings):
 	ET.SubElement(term_desc, 'null')
 
 	total_invoice = ET.SubElement(financial, 'Total_invoice')
-	total_invoice.text = str(doc.total_amount_company_currency)
+	total_invoice.text = str(doc.base_total_invoice)
 
 	deffered_payment_reference = ET.SubElement(financial, 'Deffered_payment_reference')
 	ET.SubElement(deffered_payment_reference, 'null')
@@ -1037,8 +1042,7 @@ def build_financial(doc, settings):
 	guarantee_amount = ET.SubElement(guarantee, 'Amount')
 	guarantee_amount.text = '0.0'
 
-	guarantee_date = ET.SubElement(guarantee, 'Date')
-	guarantee_date.text = nowdate()
+	ET.SubElement(guarantee, 'Date')
 
 	excluded_country = ET.SubElement(amounts, 'Excluded_country')
 
@@ -1075,8 +1079,7 @@ def build_transit(doc):
 	sig_place = ET.SubElement(signature, 'Place')
 	ET.SubElement(sig_place, 'null')
 
-	sig_date = ET.SubElement(signature, 'Date')
-	sig_date.text = nowdate()
+	ET.SubElement(signature, 'Date')
 
 	destination = ET.SubElement(transit, 'Destination')
 
@@ -1386,19 +1389,19 @@ def build_suppliers_documents(doc, settings):
         suppliers_document_street.text = doc.get_suppliers_document_street()
 
         suppliers_document_telephone = ET.SubElement(suppliers_docs, 'Suppliers_document_telephone')
-        suppliers_document_telephone.text = ''
+        ET.SubElement(suppliers_document_telephone, 'null')
 
         suppliers_document_fax = ET.SubElement(suppliers_docs, 'Suppliers_document_fax')
-        suppliers_document_fax.text = ''
+        ET.SubElement(suppliers_document_fax, 'null')
 
         suppliers_document_zip_code = ET.SubElement(suppliers_docs, 'Suppliers_document_zip_code')
-        suppliers_document_zip_code.text = ''
+        ET.SubElement(suppliers_document_zip_code, 'null')
 
         suppliers_document_invoice_nbr = ET.SubElement(suppliers_docs, 'Suppliers_document_invoice_nbr')
         suppliers_document_invoice_nbr.text = doc.get_suppliers_document_invoice_nbr()
 
         suppliers_document_invoice_amt = ET.SubElement(suppliers_docs, 'Suppliers_document_invoice_amt')
-        suppliers_document_invoice_amt.text = ''
+        ET.SubElement(suppliers_document_invoice_amt, 'null')
 
         suppliers_document_type_code = ET.SubElement(suppliers_docs, 'Suppliers_document_type_code')
         suppliers_document_type_code.text = settings.suppliers_document_type_code
@@ -1407,7 +1410,7 @@ def build_suppliers_documents(doc, settings):
         suppliers_document_date.text = doc.get_suppliers_document_date()
 
         suppliers_document_c75_nbr = ET.SubElement(suppliers_docs, 'Suppliers_document_c75_nbr')
-        suppliers_document_c75_nbr.text = ''
+        ET.SubElement(suppliers_document_c75_nbr, 'null')
 
         suppliers_document_c75_date = ET.SubElement(suppliers_docs, 'Suppliers_document_c75_date')
         suppliers_document_c75_date.text = ''
@@ -1418,7 +1421,7 @@ def build_suppliers_documents(doc, settings):
 def generate_xml_file(name):
 	"""
 	Generate the XML file for a given Customs Entry by automatically deriving 
-	and filling out the fields as per the legacy PHP file. The resulting XML is
+	and filling out the fields as per the legacy PHP code. The resulting XML is
 	returned as a downloadable file.
 	"""
 	doc = frappe.get_doc('Customs Entry', name)

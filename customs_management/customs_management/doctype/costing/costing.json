@@ -4,6 +4,7 @@
  "creation": "2023-04-24 19:54:42.928040",
  "default_view": "List",
  "doctype": "DocType",
+ "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -68,11 +69,12 @@
    "fieldtype": "Link",
    "label": "Amended From",
    "no_copy": 1,
-   "options": "Shipment Clearing",
+   "options": "Costing",
    "print_hide": 1,
    "read_only": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "markup_summary",
    "fieldtype": "Table",
    "label": "Markup Summary",
@@ -137,6 +139,7 @@
    "label": "Price Revision"
   },
   {
+   "allow_bulk_edit": 1,
    "allow_on_submit": 1,
    "fieldname": "price_revision_items",
    "fieldtype": "Table",
@@ -144,7 +147,7 @@
    "options": "Price Revision"
   },
   {
-   "default": "Standard Selling",
+   "default": "RETAIL",
    "fieldname": "sales_pricelist",
    "fieldtype": "Link",
    "label": "Sales Pricelist",
@@ -227,6 +230,7 @@
    "allow_on_submit": 1,
    "fieldname": "total_purchase_amount",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Total Purchase Amount"
   },
   {
@@ -237,6 +241,7 @@
    "allow_on_submit": 1,
    "fieldname": "total_landed_cost",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Total Landed Cost"
   },
   {
@@ -270,13 +275,13 @@
   {
    "group": "Shipment Clearing",
    "link_doctype": "Landed Cost Voucher",
-   "link_fieldname": "shipment_clearing"
+   "link_fieldname": "Costing"
   }
  ],
- "modified": "2025-02-19 14:46:55.913225",
+ "modified": "2025-02-25 12:14:39.709722",
  "modified_by": "Administrator",
  "module": "Customs Management",
- "name": "Shipment Clearing",
+ "name": "Costing",
  "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
@@ -296,7 +301,9 @@
    "write": 1
   }
  ],
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": []
+ "states": [],
+ "title_field": "bill_of_lading"
 }

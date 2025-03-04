@@ -1,20 +1,18 @@
 from frappe import _
 
-
 def get_data():
-	
 	return {
-		"fieldname": "customs_entry",
-		"non_standard_fieldnames": {
+		'fieldname': 'customs_entry',
+		'internal_links': {
+			'Purchase Receipt': ['items', 'reference_document'],
 		},
-		"internal_links": {
-			"Purchase Invoice": ["items", "reference_document"],
-			"Purchase Receipt": ["items", "reference_document"],
-		},
-		"transactions": [
+		'transactions': [
 			{
-				"label": _("Reference"),
-				"items": ["Landed Cost Voucher"],
-			},
-		],
+				'label': _('Reference'),
+				'items': [
+					'Landed Cost Voucher',
+			        'Purchase Receipt'
+				]
+			}
+		]
 	}

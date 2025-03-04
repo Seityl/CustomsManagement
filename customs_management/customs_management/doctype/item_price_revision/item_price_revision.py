@@ -7,7 +7,7 @@ from frappe.model.document import Document
 class ItemPriceRevision(Document):
 	@frappe.whitelist()
 	def get_markup_summary(self):
-		if self.shipment_clearing:
-			doc = frappe.get_doc('Shipment Clearing', self.shipment_clearing)
+		if self.costing:
+			doc = frappe.get_doc('Costing', self.costing)
 			print("SC DOC ==============", doc)	
 			self.markup_summary = doc.markup_summary

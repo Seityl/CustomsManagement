@@ -48,7 +48,7 @@
   {
    "fieldname": "shipment_clearing_tab",
    "fieldtype": "Tab Break",
-   "label": "Shipment Clearing "
+   "label": "Costing"
   },
   {
    "fieldname": "shipment_clearing_additional_charges",
@@ -70,12 +70,12 @@
   {
    "fieldname": "tariff_management_tab",
    "fieldtype": "Tab Break",
-   "label": "Tariff Application"
+   "label": "Invoice Verification"
   },
   {
    "fieldname": "tariff_management_additional_charges",
    "fieldtype": "Table",
-   "label": "Tariff Application Additional Charges",
+   "label": "Invoice Verification Additional Charges",
    "options": "Tariff Additional Charges"
   },
   {
@@ -85,7 +85,7 @@
    "label": "Auto submit created Landed cost voucher"
   },
   {
-   "description": "If the newly calculated price is within this threshold, then the system will automatically set the updated price as the current price. If it crosses this threshold then the price for that item will be revised on shipment clearing.",
+   "description": "If the newly calculated price is within this threshold, then the system will automatically set the updated price as the current price. If it crosses this threshold then the price for that item will be revised on costing.",
    "fieldname": "threshold",
    "fieldtype": "Percent",
    "in_list_view": 1,
@@ -240,7 +240,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-02-22 13:09:53.822508",
+ "modified": "2025-02-24 09:43:07.640829",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Customs Management Settings",

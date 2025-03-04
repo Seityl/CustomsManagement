@@ -21,7 +21,7 @@
  ],
  "fields": [
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "item",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -30,7 +30,7 @@
    "reqd": 1
   },
   {
-   "columns": 2,
+   "columns": 4,
    "fetch_from": "item.description",
    "fieldname": "description",
    "fieldtype": "Text Editor",
@@ -109,10 +109,10 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2024-03-19 02:03:50.709696",
+ "modified": "2025-02-25 13:54:31.888241",
  "modified_by": "Administrator",
  "module": "Customs Management",
- "name": "Tariff Application Item",
+ "name": "Invoice Verification Item",
  "owner": "Administrator",
  "permissions": [],
  "sort_field": "modified",

@@ -1080,41 +1080,40 @@ def reset():
 
 
 
-from customs_management.tariff_application_functions import get_items_by_purchase_invoice,get_default_additional_charges
 
-@frappe.whitelist()
-def create_tariffapp(self,method):
-    if self.is_return:
-        return
+# @frappe.whitelist()
+# def create_tariffapp(self,method):
+#     if self.is_return:
+#         return
     
-    print(self,method,type(self))
-    # self=json.loads(self)
-    print("create_tairffapp  "*80)
-    # tariff=frappe.get_doc({"doctype":"Tariff Application"})
-    # tariff.company="Jollys Pharmacy Limited"
-    # tariff.reference_doctype="Purchase Receipt"
-    # tariff.reference_document="MAT-PRE-2023-00034"
-    # tariff.currency="USD"
-    # get_items_by_purchase_invoice(tariff)
-    # get_default_additional_charges(tariff)
-    # tariff.insert()
-    print("self.",self.custom_invoice_number)
-    if self.custom_invoice_number:
-        if self.doctype == "Purchase Invoice" and self.update_stock == 0:
-        # can throw a message to say wont be created coz of updatestock 1
-            frappe.msgprint(
-                msg='This invoice update stock is 1 should be 0 to generate tariff application record',
-                title='Error',
-            )
-            return
-        tariff=frappe.get_doc({"doctype":"Tariff Application"})
-        tariff.company=self.company
-        tariff.reference_doctype=self.doctype
-        tariff.reference_document=self.name
-        tariff.currency=self.currency
-        get_items_by_purchase_invoice(tariff)
-        get_default_additional_charges(tariff)
-        tariff.insert()
+#     print(self,method,type(self))
+#     # self=json.loads(self)
+#     print("create_tairffapp  "*80)
+#     # tariff=frappe.get_doc({"doctype":"Tariff Application"})
+#     # tariff.company="Jollys Pharmacy Limited"
+#     # tariff.reference_doctype="Purchase Receipt"
+#     # tariff.reference_document="MAT-PRE-2023-00034"
+#     # tariff.currency="USD"
+#     # get_items_by_purchase_invoice(tariff)
+#     # get_default_additional_charges(tariff)
+#     # tariff.insert()
+#     print("self.",self.custom_invoice_number)
+#     if self.custom_invoice_number:
+#         if self.doctype == "Purchase Invoice" and self.update_stock == 0:
+#         # can throw a message to say wont be created coz of updatestock 1
+#             frappe.msgprint(
+#                 msg='This invoice update stock is 1 should be 0 to generate tariff application record',
+#                 title='Error',
+#             )
+#             return
+#         tariff=frappe.get_doc({"doctype":"Tariff Application"})
+#         tariff.company=self.company
+#         tariff.reference_doctype=self.doctype
+#         tariff.reference_document=self.name
+#         tariff.currency=self.currency
+#         get_items_by_purchase_invoice(tariff)
+#         get_default_additional_charges(tariff)
+#         tariff.insert()
 
 
 @frappe.whitelist()
@@ -1252,60 +1251,59 @@ def add_tofob(misc,tot):
     print("xxxdfdf",x)
     return round(f,2)
 
-@frappe.whitelist()
-def get_tax_info(name='SC008',document="MAT-PRE-2023-00015",doc="Purchase Receipt"):
-    duty=0
-    vat=0
-    service=0
-    surcharge=0
-    excise=0
-    markup=0
-    items=frappe.db.get_all("Customs Entry Tariff Application Item",{"parent":name,"reference_document":document},["*"])
-    purchase_det=frappe.get_doc(doc,document)
-    supplier=purchase_det.supplier
-    supplier_name=purchase_det.supplier_name
-    print("supplier",supplier,supplier_name)
-    print("puchase===============================================",purchase_det.name)
-    # print("items",items)
-    for item in items:
-        print("item",item.get("name"),item.get("customs_tariff_number"))
-        duty_per,vat_per,ser_per,sur_per,excise_per,markup_per=frappe.db.get_value("Customs Tariff Number",{"name":item.get("customs_tariff_number")},["custom_duty_percentage","custom_vat_percentage","custom_service_charge_percentage","custom_surcharge_percentage","custom_excise_percentage","custom_markup_percentage"])
-        print(duty_per,vat_per,ser_per,sur_per,excise_per,markup_per)
-        duty+=item.get('amount')*(duty_per/100)
-        # vat+=item.get('amount')*(vat_per/100)
-        service+=item.get('amount')*(ser_per/100)
-        surcharge+=item.get('amount')*(sur_per/100)
-        excise+=item.get('amount')*(excise_per/100)
-        markup+=item.get('amount')*(markup_per/100)
+# @frappe.whitelist()
+# def get_tax_info(name='SC008',document="MAT-PRE-2023-00015",doc="Purchase Receipt"):
+#     duty=0
+#     vat=0
+#     service=0
+#     surcharge=0
+#     excise=0
+#     markup=0
+#     items=frappe.db.get_all("Customs Entry Tariff Application Item",{"parent":name,"reference_document":document},["*"])
+#     purchase_det=frappe.get_doc(doc,document)
+#     supplier=purchase_det.supplier
+#     supplier_name=purchase_det.supplier_name
+#     print("supplier",supplier,supplier_name)
+#     print("puchase===============================================",purchase_det.name)
+#     # print("items",items)
+#     for item in items:
+#         print("item",item.get("name"),item.get("customs_tariff_number"))
+#         duty_per,vat_per,ser_per,sur_per,excise_per,markup_per=frappe.db.get_value("Customs Tariff Number",{"name":item.get("customs_tariff_number")},["custom_duty_percentage","custom_vat_percentage","custom_service_charge_percentage","custom_surcharge_percentage","custom_excise_percentage","custom_markup_percentage"])
+#         print(duty_per,vat_per,ser_per,sur_per,excise_per,markup_per)
+#         duty+=item.get('amount')*(duty_per/100)
+#         # vat+=item.get('amount')*(vat_per/100)
+#         service+=item.get('amount')*(ser_per/100)
+#         surcharge+=item.get('amount')*(sur_per/100)
+#         excise+=item.get('amount')*(excise_per/100)
+#         markup+=item.get('amount')*(markup_per/100)
 
-        bs_amt=item.get('amount') if item.get('amount') else 0
-        vat_total=item.get('amount')*(duty_per/100)+item.get('amount')*(ser_per/100)+item.get('amount')*(sur_per/100)+item.get('amount')*(excise_per/100)+bs_amt
-        print(f"duty {item.get('amount')*(duty_per/100)}  + service {item.get('amount')*(ser_per/100)}  + surcharge {item.get('amount')*(sur_per/100)}  + exicse {item.get('amount')*(excise_per/100)}  + bs_amount {bs_amt}")
-        vat+=vat_total*(vat_per/100)
-        print(f"item-{item.get('item')} {vat_total}*{vat_per}/100 == vat")
-    total=duty+vat+service+surcharge+excise
+#         bs_amt=item.get('amount') if item.get('amount') else 0
+#         vat_total=item.get('amount')*(duty_per/100)+item.get('amount')*(ser_per/100)+item.get('amount')*(sur_per/100)+item.get('amount')*(excise_per/100)+bs_amt
+#         print(f"duty {item.get('amount')*(duty_per/100)}  + service {item.get('amount')*(ser_per/100)}  + surcharge {item.get('amount')*(sur_per/100)}  + exicse {item.get('amount')*(excise_per/100)}  + bs_amount {bs_amt}")
+#         vat+=vat_total*(vat_per/100)
+#         print(f"item-{item.get('item')} {vat_total}*{vat_per}/100 == vat")
+#     total=duty+vat+service+surcharge+excise
 
-    print("->",[{"abbr":"DT","desc":"DUTY","val":duty},
-        {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
-        {"abbr":"SR","desc":"SERVICE","val":service},
-        {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
-        {"abbr":"EX","desc":"EXCISE","val":excise},
-        {"abbr":"MK","desc":"MARKUP","val":markup}
-        ])
-    return [
-            {"abbr":"DT","desc":"DUTY","val":duty},
-            {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
-            {"abbr":"SR","desc":"SERVICE","val":service},
-            {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
-            {"abbr":"EX","desc":"EXCISE","val":excise},
-            {"abbr":"","desc":"TOTAL TAXES","val":total}
-           ]
+#     print("->",[{"abbr":"DT","desc":"DUTY","val":duty},
+#         {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
+#         {"abbr":"SR","desc":"SERVICE","val":service},
+#         {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
+#         {"abbr":"EX","desc":"EXCISE","val":excise},
+#         {"abbr":"MK","desc":"MARKUP","val":markup}
+#         ])
+#     return [
+#             {"abbr":"DT","desc":"DUTY","val":duty},
+#             {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
+#             {"abbr":"SR","desc":"SERVICE","val":service},
+#             {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
+#             {"abbr":"EX","desc":"EXCISE","val":excise},
+#             {"abbr":"","desc":"TOTAL TAXES","val":total}
+#            ]
 
 
 @frappe.whitelist()
 def split_mat_req(name):
     doc = frappe.get_doc("Material Request", name)
-
     try:
         if doc.material_request_type != 'Material Transfer':
             frappe.throw('Only able to split purpose "Material Transfer" by warehouse.')
@@ -1317,14 +1315,18 @@ def split_mat_req(name):
                 if item.warehouse not in locations:
                     locations.append(item.warehouse)
             
-            if len(locations) > 1:
+            if len(locations) == 1:
+                frappe.throw('Material request is already split by warehouse.')
+
+            else:
                 for location in locations:
-                    new_material_request = frappe.get_doc({'doctype': 'Material Request'})
-                    new_material_request.material_request_type = 'Material Transfer'
-                    new_material_request.schedule_date = doc.items[0].schedule_date
-                    new_material_request.transaction_date = doc.transaction_date
-                    new_material_request.set_warehouse = location
-                    
+                    new_material_request = frappe.new_doc('Material Request')
+                    new_material_request.update({
+                        'material_request_type': 'Material Transfer',
+                        'schedule_date': doc.items[0].schedule_date,
+                        'transaction_date': doc.transaction_date,
+                        'set_warehouse': location
+                    })
                     for item in doc.items:
                         if item.warehouse == location:
                             new_material_request.append("items", {
@@ -1336,18 +1338,13 @@ def split_mat_req(name):
                             })
                             
                     new_material_request.insert()
-                    frappe.db.commit()
                     
                 if doc.docstatus == 1:
                     doc.docstatus = 2
                     doc.save()
-                    frappe.db.commit()
                 
                 doc.delete()
                 frappe.msgprint(msg='Material Transfer has been Successfully Split.', title='Success')
-
-            elif len(locations) == 1:   
-                frappe.throw('Material request is already split by warehouse.')
 
     except Exception as e:
         frappe.msgprint(msg=f'Something has went wrong during the splitting process. {e}', title='Error')

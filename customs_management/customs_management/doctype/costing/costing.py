@@ -1,6 +1,7 @@
-# Copyright (c) 2023, Sudeep Kulkarni and contributors
+# Copyright (c) 2025, Jollys Pharmacy Ltd. and contributors
 # For license information, please see license.txt
 
+from tokenize import blank_re
 import frappe
 from frappe import _
 from frappe.model.document import Document
@@ -11,7 +12,10 @@ from erpnext.stock.get_item_details import get_price_list_rate
 
 from customs_management.api import create_attachment
 
-class ShipmentClearing(Document):
+class Costing(Document):
+    def before_insert(self):
+        self.initialize_additional_charges()
+
     def before_save(self):
         self.update_bank_and_handler_charges()
         self.update_default_additional_charges()
@@ -48,55 +52,84 @@ class ShipmentClearing(Document):
     def link_to_landed_cost_vouchers(self):
         landed_cost_voucners = frappe.db.get_all('Landed Cost Voucher', filters={'customs_entry': self.customs_entry}, fields=['name'])
         for landed_cost_voucner in landed_cost_voucners:
-            frappe.db.set_value('Landed Cost Voucher', landed_cost_voucner, 'shipment_clearing', self.name)
+            frappe.db.set_value('Landed Cost Voucher', landed_cost_voucner, 'custom_costing', self.name)
 
     @frappe.whitelist()
     def get_markup_summary(self, item_tariff_number=None, custom_markup_percentage=None):
-        if not self.customs_entry:
-            return
-        
-        customs_entry_doc = frappe.get_doc('Customs Entry', self.customs_entry)
+        try:
+            if not self.customs_entry and not frappe.db.exists('Costing', self.name):
+                frappe.msgprint(_("No Customs Entry specified."), indicator="orange")
+                return
 
-        self.markup_summary = []
-        self.items = []
+            try:
+                customs_entry_doc = frappe.get_doc('Customs Entry', self.customs_entry)
 
-        markup_items = []
+            except frappe.DoesNotExistError:
+                frappe.msgprint(_("Customs Entry '{0}' not found.").format(self.customs_entry), indicator="red")
+                return
 
-        for item in customs_entry_doc.items:
-            existing_item = next((entry for entry in markup_items if entry['item_code'] == item.item), None)
+            self.markup_summary = []
+            self.items = []
 
-            if existing_item:
-                existing_item['qty'] += item.qty
-                
-            else:
-                markup_items.append({
-                    'item_code': item.item,
-                    'qty': item.qty,
-                    'reference_doctype' : item.reference_doctype,
-                    'reference_document': item.reference_document,
-                    'customs_tariff_number': item.customs_tariff_number,
-                    'description': item.description,
-                    'uom': item.uom
-                })
+            markup_items = []
 
-        for markup_item in markup_items:
-            if item_tariff_number == markup_item['customs_tariff_number']:
-                markup_per = custom_markup_percentage
+            for item in customs_entry_doc.items:
+                existing_item = next((entry for entry in markup_items if entry['item_code'] == item.item), None)
 
-            else:
-                markup_per = frappe.db.get_value('Customs Tariff Number', {'tariff_number': markup_item['customs_tariff_number']}, 'custom_markup_percentage')
-                
-            self.append('markup_summary', {
-                'item_code' : markup_item['item_code'],
-                'tariff_number' : markup_item['customs_tariff_number'],
-                'description' : markup_item['description'],
-                'markup_per' : markup_per
-            })
-        
-        for item in customs_entry_doc.items:
-            data = item.__dict__
-            del data['name']
-            self.append('items', data)
+                if existing_item:
+                    existing_item['qty'] += item.qty
+                    
+                else:
+                    markup_items.append({
+                        'item_code': item.item,
+                        'qty': item.qty,
+                        'reference_doctype': item.reference_doctype,
+                        'reference_document': item.reference_document,
+                        'customs_tariff_number': item.customs_tariff_number,
+                        'description': item.description,
+                        'uom': item.uom
+                    })
+
+            for markup_item in markup_items:
+                try:
+                    if item_tariff_number == markup_item['customs_tariff_number']:
+                        markup_per = custom_markup_percentage
+                        
+                    else:
+                        markup_per = frappe.db.get_value(
+                            'Customs Tariff Number', 
+                            {'tariff_number': markup_item['customs_tariff_number']},
+                            'custom_markup_percentage'
+                        )
+
+                    self.append('markup_summary', {
+                        'item_code': markup_item['item_code'],
+                        'tariff_number': markup_item['customs_tariff_number'],
+                        'description': markup_item['description'],
+                        'markup_per': markup_per
+                    })
+
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), "Error processing markup item for item_code: {0}".format(markup_item['item_code']))
+                    frappe.msgprint(_("Error processing markup item for item {0}. Skipping.").format(markup_item['item_code']))
+                    continue
+
+            for item in customs_entry_doc.items:
+                try:
+                    data = item.__dict__.copy()
+                    data.pop('name', None)
+                    self.append('items', data)
+
+                except Exception as e:
+                    frappe.log_error(frappe.get_traceback(), "Error appending item: {0}".format(item.item))
+                    frappe.msgprint(_("Error appending item {0}. Skipping.").format(item.item))
+                    continue
+
+            self.update_default_additional_charges()
+
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Error in get_markup_summary")
+            frappe.throw(_("Error generating markup summary: {0}").format(str(e)))
 
     def get_port_charge(self):
         for row in self.additional_charges:
@@ -150,7 +183,6 @@ class ShipmentClearing(Document):
     def generate_price_revision(self):
         try:
             settings = frappe.get_doc('Customs Management Settings')
-
             self.price_revision_items = []
             markup_rates = {}
 
@@ -160,9 +192,8 @@ class ShipmentClearing(Document):
                         markup_rates[markup_item.item_code] = markup_item.markup_per
 
                 except Exception as e:
-                    frappe.log_error(frappe.get_traceback(), 
-                        "Error processing markup_summary for item: {0}".format(markup_item.item_code))
-                    frappe.msgprint(_("Error processing markup_summary for item: {0}. Continuing...").format(item.item))
+                    frappe.log_error(frappe.get_traceback(), "Error processing markup_summary for item: {0}".format(markup_item.item_code))
+                    frappe.msgprint(_("Error processing markup_summary for item: {0}. Continuing...").format(markup_item.item_code))
                     continue
 
             for item in self.items:
@@ -188,16 +219,36 @@ class ShipmentClearing(Document):
 
                 base = landed_cost + item.base_vat_amount
 
+                # Get markup percentage, default to 0 if not found
                 markup_percent = markup_rates.get(item.item, 0)
                 markup_value = round((base * (markup_percent / 100)), 2)
 
-                case_price = (base + markup_value) / item.qty
-                each_price = (base + markup_value) / item.stock_qty
+                if item.qty:
+                    case_price = (base + markup_value) / item.qty
+                    
+                else:
+                    frappe.msgprint(_("Quantity is zero for item {0}. Setting case price to 0.").format(item.item))
+                    case_price = 0
 
+                if item.stock_qty:
+                    each_price = (base + markup_value) / item.stock_qty
+
+                else:
+                    frappe.msgprint(_("Stock quantity is zero for item {0}. Setting each price to 0.").format(item.item))
+                    each_price = 0
+
+                # Retrieve current item price and ensure it's not zero before calculating diff_percentage
                 current_item_price = self.get_item_price(item)
-                diff_percentage = abs(((each_price - flt(current_item_price)) / flt(current_item_price)) * 100)
 
-                if(diff_percentage < settings.threshold):
+                if flt(current_item_price) == 0.00:
+                    diff_percentage = 0
+                    frappe.msgprint(_("Current price is zero for item {0}. Setting diff percentage to 0.").format(item.item))
+                    
+                else:
+                    diff_percentage = abs(((each_price - flt(current_item_price)) / flt(current_item_price)) * 100)
+
+                # Determine updated prices and approval based on threshold
+                if diff_percentage < settings.threshold:
                     updated_case_price = case_price
                     updated_each_price = each_price
                     price_approved = True
@@ -206,7 +257,7 @@ class ShipmentClearing(Document):
                     updated_case_price = 0
                     updated_each_price = 0
                     price_approved = False
-                    
+
                 self.append('price_revision_items', {
                     'item': item.item,
                     'description': item.description,
@@ -214,6 +265,7 @@ class ShipmentClearing(Document):
                     'stock_qty': item.stock_qty,
                     'uom': item.uom,
                     'base': base,
+                    'price': item.base_rate,
                     'markup_percent': markup_percent,
                     'markup_value': markup_value,
                     'current_price': current_item_price,
@@ -304,25 +356,47 @@ class ShipmentClearing(Document):
             row.exchange_rate = get_exchange_rate(self.custom_entry_currency, row.account_currency)
             row.base_amount = row.amount * row.exchange_rate
             row.custom_foreign_currency = self.custom_entry_currency
-
+            
+    def reset_bank_and_handler_charges(self):
+        self.handler_percentage_value = 0.0
+        self.bank_percentage_value = 0.0
+        self.total_charges_amount = 0.0
+        self.handler_percentage = 0.0
+        self.bank_percentage = 0.0
+        
     @frappe.whitelist()
     def update_bank_and_handler_charges(self):
-        # total = 0
-        # total = frappe.db.get_value('Customs Entry', self.customs_entry, 'total_base_amount_for_split')
-        doc = frappe.get_doc('Customs Entry', self.customs_entry)
-        total = 0.0
-        # Iterate over each row in the consolidation child table
-        for row in doc.consolidation:
-            # If the base_fob_price field is not already set, calculate it using fob_price and conversion_rate
-            total += flt(row.base_fob_price)
-            # for item in self.items:
-            #     total += (item.base_amount or 0)
-                        # + (item.base_duty_amount or 0) + (item.base_surcharge_percentage or 0) + \
-                        # (item.base_service_charge_percentage or 0) + (item.base_excise_percentage or 0) + (item.base_vat_amount or 0)
-                    
-        self.handler_percentage_value = round(total * (self.handler_percentage / 100), 2)
-        self.bank_percentage_value = round(total * (self.bank_percentage / 100), 2)
-        self.total_charges_amount = self.handler_percentage_value + self.bank_percentage_value
+        try:
+            if not self.customs_entry:
+                frappe.msgprint(_('No Customs Entry specified.'), indicator='orange')
+                self.reset_bank_and_handler_charges()
+                return
+
+            try:
+                doc = frappe.get_doc('Customs Entry', self.customs_entry)
+
+            except frappe.DoesNotExistError:
+                frappe.msgprint(_("Customs Entry '{0}' not found.").format(self.customs_entry), indicator='red')
+                self.reset_bank_and_handler_charges()
+                return
+
+            total = 0.0
+
+            if not doc.consolidation or len(doc.consolidation) == 0:
+                frappe.msgprint(_('No consolidation data found in the referenced Customs Entry.'), indicator='orange')
+                self.reset_bank_and_handler_charges()
+
+            else:
+                for row in doc.consolidation:
+                    total += flt(row.base_fob_price)
+
+            self.handler_percentage_value = round(total * (self.handler_percentage / 100), 2)
+            self.bank_percentage_value = round(total * (self.bank_percentage / 100), 2)
+            self.total_charges_amount = self.handler_percentage_value + self.bank_percentage_value
+
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), 'Error in update_bank_and_handler_charges')
+            frappe.throw(_('Error updating bank and handler charges: {0}').format(str(e)))
 
     @frappe.whitelist()
     def initialize_additional_charges(self):
