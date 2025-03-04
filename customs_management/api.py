@@ -73,69 +73,69 @@ def get_item_stock(item_code, warehouse):
   else:
     return 0
   
-@frappe.whitelist()
-def send_outstanding_material_request_emails():
-    message = ''
+# @frappe.whitelist()
+# def send_outstanding_material_request_emails():
+#     message = ''
 
-    from_date = frappe.utils.getdate('2024-01-01')
-    to_date = frappe.utils.add_to_date(None, days=-3, as_string=False, as_datetime=True)
+#     from_date = frappe.utils.getdate('2024-01-01')
+#     to_date = frappe.utils.add_to_date(None, days=-3, as_string=False, as_datetime=True)
 
-    outstanding_material_requests = frappe.get_list("Material Request", filters=[[
-        'status', 'in', ['Pending','In Transit','Partially Ordered', 'Draft']],[
-        "creation", "between", [from_date, to_date]]], fields = ["name", "status", "owner", "creation"]
-    )
+#     outstanding_material_requests = frappe.get_list("Material Request", filters=[[
+#         'status', 'in', ['Pending','In Transit','Partially Ordered', 'Draft']],[
+#         "creation", "between", [from_date, to_date]]], fields = ["name", "status", "owner", "creation"]
+#     )
         
-    owners = []
-    associated_material_requests = {}
+#     owners = []
+#     associated_material_requests = {}
 
-    for material_request in outstanding_material_requests:
-        for key, value in material_request.items():
-            if key == "owner" and value not in owners:
-                owners.append(value)
-            if key == "creation":
-                    material_request[key] = str(value)
+#     for material_request in outstanding_material_requests:
+#         for key, value in material_request.items():
+#             if key == "owner" and value not in owners:
+#                 owners.append(value)
+#             if key == "creation":
+#                     material_request[key] = str(value)
 
-        for owner in owners:
-            values = {}
+#         for owner in owners:
+#             values = {}
             
-            for key, value in material_request.items():
-                if key == "name":
-                    values["Name"] = value
+#             for key, value in material_request.items():
+#                 if key == "name":
+#                     values["Name"] = value
                     
-                if key == "status":
-                    values["Status"] = value
+#                 if key == "status":
+#                     values["Status"] = value
                     
-                if key == "creation":
-                    values["Date Created"] = value
+#                 if key == "creation":
+#                     values["Date Created"] = value
                     
-            associated_material_requests.setdefault(owner, []).append(values)
+#             associated_material_requests.setdefault(owner, []).append(values)
 
-    message = message + "The following employees have material requests that have been outstanding for 3 or more days: \n\n"
+#     message = message + "The following employees have material requests that have been outstanding for 3 or more days: \n\n"
 
-    n = 1
+#     n = 1
 
-    for person, values in associated_material_requests.items():
-        message = message + str(n) + ". " + person + "\n"
-        n = n + 1
+#     for person, values in associated_material_requests.items():
+#         message = message + str(n) + ". " + person + "\n"
+#         n = n + 1
         
-    message = message + "\n"+ "* " * 25 + "\n\n"
+#     message = message + "\n"+ "* " * 25 + "\n\n"
 
-    for person, values in associated_material_requests.items():
-            message = message + "Outstanding material requests from - " + person + "\n\n"
-            for material_request in values:
-                message = message + "- " * 25 + "\n"
-                for key, value in material_request.items():
-                    message = message + key + ": " + value + "\n"
-            message = message + "\n"+ "* " * 25 + "\n\n"
+#     for person, values in associated_material_requests.items():
+#             message = message + "Outstanding material requests from - " + person + "\n\n"
+#             for material_request in values:
+#                 message = message + "- " * 25 + "\n"
+#                 for key, value in material_request.items():
+#                     message = message + key + ": " + value + "\n"
+#             message = message + "\n"+ "* " * 25 + "\n\n"
                 
-    # recipients = ['inventory@jollys.local', 'supervisor@jollys.local', 'jeriel@jollys.local', 'jprevost@jollysonline.com', 'ecyrille@jollysonline.com', 'cdgrant@jollysonline.com']
+#     # recipients = ['inventory@jollys.local', 'supervisor@jollys.local', 'jeriel@jollys.local', 'jprevost@jollysonline.com', 'ecyrille@jollysonline.com', 'cdgrant@jollysonline.com']
 
-    frappe.sendmail(
-        recipients = ['jeriel@jollys.local', 'jprevost@jollysonline.com', 'ecyrille@jollysonline.com', 'cdgrant@jollysonline.com'],
-        subject = 'Outstanding Material Requests',
-        message = message,
-        header = 'Outstanding Material Requests'
-    )
+#     frappe.sendmail(
+#         recipients = ['jeriel@jollys.local', 'jprevost@jollysonline.com', 'ecyrille@jollysonline.com', 'cdgrant@jollysonline.com'],
+#         subject = 'Outstanding Material Requests',
+#         message = message,
+#         header = 'Outstanding Material Requests'
+#     )
 
 @frappe.whitelist()
 def my_function(name='SC014',customs_entry='CE-TSCW16719757-#00001',tariff_count=False):
@@ -1080,40 +1080,41 @@ def reset():
 
 
 
+from customs_management.tariff_application_functions import get_items_by_purchase_invoice,get_default_additional_charges
 
-# @frappe.whitelist()
-# def create_tariffapp(self,method):
-#     if self.is_return:
-#         return
+@frappe.whitelist()
+def create_tariffapp(self,method):
+    if self.is_return:
+        return
     
-#     print(self,method,type(self))
-#     # self=json.loads(self)
-#     print("create_tairffapp  "*80)
-#     # tariff=frappe.get_doc({"doctype":"Tariff Application"})
-#     # tariff.company="Jollys Pharmacy Limited"
-#     # tariff.reference_doctype="Purchase Receipt"
-#     # tariff.reference_document="MAT-PRE-2023-00034"
-#     # tariff.currency="USD"
-#     # get_items_by_purchase_invoice(tariff)
-#     # get_default_additional_charges(tariff)
-#     # tariff.insert()
-#     print("self.",self.custom_invoice_number)
-#     if self.custom_invoice_number:
-#         if self.doctype == "Purchase Invoice" and self.update_stock == 0:
-#         # can throw a message to say wont be created coz of updatestock 1
-#             frappe.msgprint(
-#                 msg='This invoice update stock is 1 should be 0 to generate tariff application record',
-#                 title='Error',
-#             )
-#             return
-#         tariff=frappe.get_doc({"doctype":"Tariff Application"})
-#         tariff.company=self.company
-#         tariff.reference_doctype=self.doctype
-#         tariff.reference_document=self.name
-#         tariff.currency=self.currency
-#         get_items_by_purchase_invoice(tariff)
-#         get_default_additional_charges(tariff)
-#         tariff.insert()
+    print(self,method,type(self))
+    # self=json.loads(self)
+    print("create_tairffapp  "*80)
+    # tariff=frappe.get_doc({"doctype":"Tariff Application"})
+    # tariff.company="Jollys Pharmacy Limited"
+    # tariff.reference_doctype="Purchase Receipt"
+    # tariff.reference_document="MAT-PRE-2023-00034"
+    # tariff.currency="USD"
+    # get_items_by_purchase_invoice(tariff)
+    # get_default_additional_charges(tariff)
+    # tariff.insert()
+    print("self.",self.custom_invoice_number)
+    if self.custom_invoice_number:
+        if self.doctype == "Purchase Invoice" and self.update_stock == 0:
+        # can throw a message to say wont be created coz of updatestock 1
+            frappe.msgprint(
+                msg='This invoice update stock is 1 should be 0 to generate tariff application record',
+                title='Error',
+            )
+            return
+        tariff=frappe.get_doc({"doctype":"Tariff Application"})
+        tariff.company=self.company
+        tariff.reference_doctype=self.doctype
+        tariff.reference_document=self.name
+        tariff.currency=self.currency
+        get_items_by_purchase_invoice(tariff)
+        get_default_additional_charges(tariff)
+        tariff.insert()
 
 
 @frappe.whitelist()
@@ -1251,59 +1252,60 @@ def add_tofob(misc,tot):
     print("xxxdfdf",x)
     return round(f,2)
 
-# @frappe.whitelist()
-# def get_tax_info(name='SC008',document="MAT-PRE-2023-00015",doc="Purchase Receipt"):
-#     duty=0
-#     vat=0
-#     service=0
-#     surcharge=0
-#     excise=0
-#     markup=0
-#     items=frappe.db.get_all("Customs Entry Tariff Application Item",{"parent":name,"reference_document":document},["*"])
-#     purchase_det=frappe.get_doc(doc,document)
-#     supplier=purchase_det.supplier
-#     supplier_name=purchase_det.supplier_name
-#     print("supplier",supplier,supplier_name)
-#     print("puchase===============================================",purchase_det.name)
-#     # print("items",items)
-#     for item in items:
-#         print("item",item.get("name"),item.get("customs_tariff_number"))
-#         duty_per,vat_per,ser_per,sur_per,excise_per,markup_per=frappe.db.get_value("Customs Tariff Number",{"name":item.get("customs_tariff_number")},["custom_duty_percentage","custom_vat_percentage","custom_service_charge_percentage","custom_surcharge_percentage","custom_excise_percentage","custom_markup_percentage"])
-#         print(duty_per,vat_per,ser_per,sur_per,excise_per,markup_per)
-#         duty+=item.get('amount')*(duty_per/100)
-#         # vat+=item.get('amount')*(vat_per/100)
-#         service+=item.get('amount')*(ser_per/100)
-#         surcharge+=item.get('amount')*(sur_per/100)
-#         excise+=item.get('amount')*(excise_per/100)
-#         markup+=item.get('amount')*(markup_per/100)
+@frappe.whitelist()
+def get_tax_info(name='SC008',document="MAT-PRE-2023-00015",doc="Purchase Receipt"):
+    duty=0
+    vat=0
+    service=0
+    surcharge=0
+    excise=0
+    markup=0
+    items=frappe.db.get_all("Customs Entry Tariff Application Item",{"parent":name,"reference_document":document},["*"])
+    purchase_det=frappe.get_doc(doc,document)
+    supplier=purchase_det.supplier
+    supplier_name=purchase_det.supplier_name
+    print("supplier",supplier,supplier_name)
+    print("puchase===============================================",purchase_det.name)
+    # print("items",items)
+    for item in items:
+        print("item",item.get("name"),item.get("customs_tariff_number"))
+        duty_per,vat_per,ser_per,sur_per,excise_per,markup_per=frappe.db.get_value("Customs Tariff Number",{"name":item.get("customs_tariff_number")},["custom_duty_percentage","custom_vat_percentage","custom_service_charge_percentage","custom_surcharge_percentage","custom_excise_percentage","custom_markup_percentage"])
+        print(duty_per,vat_per,ser_per,sur_per,excise_per,markup_per)
+        duty+=item.get('amount')*(duty_per/100)
+        # vat+=item.get('amount')*(vat_per/100)
+        service+=item.get('amount')*(ser_per/100)
+        surcharge+=item.get('amount')*(sur_per/100)
+        excise+=item.get('amount')*(excise_per/100)
+        markup+=item.get('amount')*(markup_per/100)
 
-#         bs_amt=item.get('amount') if item.get('amount') else 0
-#         vat_total=item.get('amount')*(duty_per/100)+item.get('amount')*(ser_per/100)+item.get('amount')*(sur_per/100)+item.get('amount')*(excise_per/100)+bs_amt
-#         print(f"duty {item.get('amount')*(duty_per/100)}  + service {item.get('amount')*(ser_per/100)}  + surcharge {item.get('amount')*(sur_per/100)}  + exicse {item.get('amount')*(excise_per/100)}  + bs_amount {bs_amt}")
-#         vat+=vat_total*(vat_per/100)
-#         print(f"item-{item.get('item')} {vat_total}*{vat_per}/100 == vat")
-#     total=duty+vat+service+surcharge+excise
+        bs_amt=item.get('amount') if item.get('amount') else 0
+        vat_total=item.get('amount')*(duty_per/100)+item.get('amount')*(ser_per/100)+item.get('amount')*(sur_per/100)+item.get('amount')*(excise_per/100)+bs_amt
+        print(f"duty {item.get('amount')*(duty_per/100)}  + service {item.get('amount')*(ser_per/100)}  + surcharge {item.get('amount')*(sur_per/100)}  + exicse {item.get('amount')*(excise_per/100)}  + bs_amount {bs_amt}")
+        vat+=vat_total*(vat_per/100)
+        print(f"item-{item.get('item')} {vat_total}*{vat_per}/100 == vat")
+    total=duty+vat+service+surcharge+excise
 
-#     print("->",[{"abbr":"DT","desc":"DUTY","val":duty},
-#         {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
-#         {"abbr":"SR","desc":"SERVICE","val":service},
-#         {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
-#         {"abbr":"EX","desc":"EXCISE","val":excise},
-#         {"abbr":"MK","desc":"MARKUP","val":markup}
-#         ])
-#     return [
-#             {"abbr":"DT","desc":"DUTY","val":duty},
-#             {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
-#             {"abbr":"SR","desc":"SERVICE","val":service},
-#             {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
-#             {"abbr":"EX","desc":"EXCISE","val":excise},
-#             {"abbr":"","desc":"TOTAL TAXES","val":total}
-#            ]
+    print("->",[{"abbr":"DT","desc":"DUTY","val":duty},
+        {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
+        {"abbr":"SR","desc":"SERVICE","val":service},
+        {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
+        {"abbr":"EX","desc":"EXCISE","val":excise},
+        {"abbr":"MK","desc":"MARKUP","val":markup}
+        ])
+    return [
+            {"abbr":"DT","desc":"DUTY","val":duty},
+            {"abbr":"VAT","desc":"VALUE ADDED TAX","val":vat},
+            {"abbr":"SR","desc":"SERVICE","val":service},
+            {"abbr":"SC","desc":"SURCHARGE","val":surcharge},
+            {"abbr":"EX","desc":"EXCISE","val":excise},
+            {"abbr":"","desc":"TOTAL TAXES","val":total}
+           ]
 
 
 @frappe.whitelist()
 def split_mat_req(name):
     doc = frappe.get_doc("Material Request", name)
+
     try:
         if doc.material_request_type != 'Material Transfer':
             frappe.throw('Only able to split purpose "Material Transfer" by warehouse.')
@@ -1315,18 +1317,14 @@ def split_mat_req(name):
                 if item.warehouse not in locations:
                     locations.append(item.warehouse)
             
-            if len(locations) == 1:
-                frappe.throw('Material request is already split by warehouse.')
-
-            else:
+            if len(locations) > 1:
                 for location in locations:
-                    new_material_request = frappe.new_doc('Material Request')
-                    new_material_request.update({
-                        'material_request_type': 'Material Transfer',
-                        'schedule_date': doc.items[0].schedule_date,
-                        'transaction_date': doc.transaction_date,
-                        'set_warehouse': location
-                    })
+                    new_material_request = frappe.get_doc({'doctype': 'Material Request'})
+                    new_material_request.material_request_type = 'Material Transfer'
+                    new_material_request.schedule_date = doc.items[0].schedule_date
+                    new_material_request.transaction_date = doc.transaction_date
+                    new_material_request.set_warehouse = location
+                    
                     for item in doc.items:
                         if item.warehouse == location:
                             new_material_request.append("items", {
@@ -1338,13 +1336,18 @@ def split_mat_req(name):
                             })
                             
                     new_material_request.insert()
+                    frappe.db.commit()
                     
                 if doc.docstatus == 1:
                     doc.docstatus = 2
                     doc.save()
+                    frappe.db.commit()
                 
                 doc.delete()
                 frappe.msgprint(msg='Material Transfer has been Successfully Split.', title='Success')
+
+            elif len(locations) == 1:   
+                frappe.throw('Material request is already split by warehouse.')
 
     except Exception as e:
         frappe.msgprint(msg=f'Something has went wrong during the splitting process. {e}', title='Error')
@@ -1538,10 +1541,10 @@ def upload_purchase_order(purchase_order):
 
 @frappe.whitelist()
 def upload_item(item): 
-    n8n_url = 'http://10.0.10.188:5678/webhook/test-upload-item'
+    n8n_url = 'http://10.0.10.188:5678/webhook/upload-item'
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': '4w`aZgww.}{-Y]A'
+        'Authorization': 'ABC123!'
     }
 
     if not item:
@@ -1905,7 +1908,7 @@ def create_stock_entry_from_return():
       stock_entry.insert()
       stock_entry.submit()
   return "Stock Entry Created"
-  
+
 from datetime import time
 
 @frappe.whitelist()
@@ -1914,9 +1917,9 @@ def create_sales_invoice_from_ticket():
     skipped = 0
     fields = ['customer', 'customer_name', 'ticket_number', 'ticket_location']
     tickets = frappe.db.get_all('CounterPoint Sales', 
-        filters={'sales_invoice_created': 0, 'ticket_error': 0, 'posting_date': '2025-01-16T00:00:00.000Z'},
+        filters={'sales_invoice_created': 0, 'ticket_error': 0},
         fields=['*'],
-        order_by = 'ticket_number',
+        order_by = 'ticket_number'
     )
     print(f'Retrieved {len(tickets)} tickets for processing.')
 
@@ -1980,7 +1983,13 @@ def create_sales_invoice_from_ticket():
         print(f'All validations passed for ticket {current_ticket.name}. Proceeding to create sales invoice.')
         sales_inv_exists = frappe.db.exists('Sales Invoice', {'custom_ticket': ticket.get('ticket_number')})
 
-        if not sales_inv_exists:
+        if sales_inv_exists:
+            print(f'Sales Invoice already created for ticket {current_ticket.name}. Continuing...')
+            skipped += 1
+            current_ticket.sales_invoice_created = 1
+            current_ticket.save()
+
+        else:
             posting_date = current_ticket.posting_date 
             converted_posting_date = datetime.datetime.strptime(posting_date, '%Y-%m-%dT%H:%M:%S.%fZ')
             formatted_posting_date = converted_posting_date.strftime('%Y-%m-%d')
@@ -2054,6 +2063,8 @@ def create_sales_invoice_from_ticket():
 
             try:
                 si.insert()
+                current_ticket.sales_invoice_created = 1
+                current_ticket.save() 
                 print(f'Sales Invoice {si.name} created successfully.')
 
             except Exception as e:
@@ -2061,125 +2072,122 @@ def create_sales_invoice_from_ticket():
                 create_sales_log(si, f'Error creating Sales Invoice: {str(e)}')
                 continue
             
-        else:
-            print(f'Sales Invoice already created for ticket {current_ticket.name}. Continuing...')
-            skipped += 1
-
     print('Finished processing tickets.')
     print(f'Skipped {skipped} / {len(tickets)}')
 
     try:
-        schedule_check_and_inflate_stock_for_sales_invoices()
+        # schedule_check_and_inflate_stock_for_sales_invoices()
+        schedule_check_and_submit_invoice()
 
     except Exception as e:
         frappe.log_error(message=e, title='Error when scheduling schedule_check_and_submit_invoice()')
     
     return 'Sales Invoices Created'
 
-def check_and_inflate_stock_for_sales_invoices(posting_date):
-    print("Starting process to check and inflate stock.")
-    si_list = frappe.db.get_all("Sales Invoice", 
-        filters={'docstatus': 0, 'custom_ticket': ['!=', None], 'posting_date': '16-01-2025'},
-        fields=['name'],
-    )
-    print(f"Number of Sales Invoices to process: {len(si_list)}")
-    mr_items = []
+# def check_and_inflate_stock_for_sales_invoices(posting_date):
+#     print("Starting process to check and inflate stock.")
+#     si_list = frappe.db.get_all("Sales Invoice", 
+#         filters={'docstatus': 0, 'custom_ticket': ['!=', None], 'posting_date': '16-01-2025'},
+#         fields=['name'],
+#     )
+#     print(f"Number of Sales Invoices to process: {len(si_list)}")
+#     mr_items = []
 
-    for si in si_list:
-        doc = frappe.get_doc('Sales Invoice', si.name)
-        print(f"\nProcessing Sales Invoice: {si.name}")
+#     for si in si_list:
+#         doc = frappe.get_doc('Sales Invoice', si.name)
+#         print(f"\nProcessing Sales Invoice: {si.name}")
 
-        for item in doc.items:
-            is_stock_item = frappe.db.get_value('Item', item.item_code, 'is_stock_item')
+#         for item in doc.items:
+#             is_stock_item = frappe.db.get_value('Item', item.item_code, 'is_stock_item')
 
-            if not is_stock_item:
-                print(f"Skipping Item : {item.item_code} - Not Stock Item")
-                continue
+#             if not is_stock_item:
+#                 print(f"Skipping Item : {item.item_code} - Not Stock Item")
+#                 continue
             
-            print(f"Checking Item : {item.item_code} - Warehouse : {item.warehouse}")
-            most_recent_bin = frappe.get_all('Bin',
-                filters = {'item_code':  item.item_code, 'warehouse': item.warehouse},
-                fields = ['name', 'actual_qty'],
-                order_by = 'creation',
-                limit = 1
-            )
+#             print(f"Checking Item : {item.item_code} - Warehouse : {item.warehouse}")
+#             most_recent_bin = frappe.get_all('Bin',
+#                 filters = {'item_code':  item.item_code, 'warehouse': item.warehouse},
+#                 fields = ['name', 'actual_qty'],
+#                 order_by = 'creation',
+#                 limit = 1
+#             )
 
-            if not most_recent_bin:
-                print(f"No Bin Found For : {item.item_code} - Warehouse : {item.warehouse}")
-                item_exists = False 
+#             if not most_recent_bin:
+#                 print(f"No Bin Found For : {item.item_code} - Warehouse : {item.warehouse}")
+#                 item_exists = False 
 
-                if len(mr_items) > 0:
-                    for mr_item in mr_items:
-                        if mr_item['item_code'] == item.item_code and mr_item['to_warehouse'] == item.warehouse:
-                            mr_item['qty'] += item.qty
-                            print(f"Adding {item.qty} To Item {mr_item['item_code']} For Warehouse {mr_item['to_warehouse']}")
-                            item_exists = True 
+#                 if len(mr_items) > 0:
+#                     for mr_item in mr_items:
+#                         if mr_item['item_code'] == item.item_code and mr_item['to_warehouse'] == item.warehouse:
+#                             mr_item['qty'] += item.qty
+#                             print(f"Adding {item.qty} To Item {mr_item['item_code']} For Warehouse {mr_item['to_warehouse']}")
+#                             item_exists = True 
 
-                if not item_exists:
-                    print(f"Appended {item.qty} To Item {item.item_code} For Warehouse {item.warehouse} to mr items")
-                    mr_items.append({
-                        'item_code': item.item_code,
-                        'qty': item.qty,
-                        'to_warehouse': item.warehouse
-                    })
+#                 if not item_exists:
+#                     print(f"Appended {item.qty} To Item {item.item_code} For Warehouse {item.warehouse} to mr items")
+#                     mr_items.append({
+#                         'item_code': item.item_code,
+#                         'qty': item.qty,
+#                         'to_warehouse': item.warehouse
+#                     })
 
-                continue
+#                 continue
             
-            most_recent_bin = most_recent_bin[0]
+#             most_recent_bin = most_recent_bin[0]
 
-            if most_recent_bin.actual_qty < item.qty:
-                print(f"Insufficient Quantity | Actual : {most_recent_bin.actual_qty} - Requires {item.qty}")
-                required_qty = item.qty - most_recent_bin.actual_qty if most_recent_bin.actual_qty >= 0 else item.qty
-                item_exists = False 
+#             if most_recent_bin.actual_qty < item.qty:
+#                 print(f"Insufficient Quantity | Actual : {most_recent_bin.actual_qty} - Requires {item.qty}")
+#                 required_qty = item.qty - most_recent_bin.actual_qty if most_recent_bin.actual_qty >= 0 else item.qty
+#                 item_exists = False 
 
-                if len(mr_items) > 0:
-                    for mr_item in mr_items:
-                        if mr_item['item_code'] == item.item_code and mr_item['to_warehouse'] == item.warehouse:
-                            mr_item['qty'] += required_qty
-                            print(f"Adding {required_qty} To Item {mr_item['item_code']} For Warehouse {mr_item['to_warehouse']}")
-                            item_exists = True 
+#                 if len(mr_items) > 0:
+#                     for mr_item in mr_items:
+#                         if mr_item['item_code'] == item.item_code and mr_item['to_warehouse'] == item.warehouse:
+#                             mr_item['qty'] += required_qty
+#                             print(f"Adding {required_qty} To Item {mr_item['item_code']} For Warehouse {mr_item['to_warehouse']}")
+#                             item_exists = True 
 
-                if not item_exists:
-                    print(f"Appended {required_qty} To Item {item.item_code} For Warehouse {item.warehouse} to mr items")
-                    mr_items.append({
-                        'item_code': item.item_code,
-                        'qty': required_qty,
-                        'to_warehouse': item.warehouse
-                    })
+#                 if not item_exists:
+#                     print(f"Appended {required_qty} To Item {item.item_code} For Warehouse {item.warehouse} to mr items")
+#                     mr_items.append({
+#                         'item_code': item.item_code,
+#                         'qty': required_qty,
+#                         'to_warehouse': item.warehouse
+#                     })
 
-            else:
-                print(f"Sufficient Quantity | Actual : {most_recent_bin.actual_qty} - Requires {item.qty}")
+#             else:
+#                 print(f"Sufficient Quantity | Actual : {most_recent_bin.actual_qty} - Requires {item.qty}")
 
-    print(f"Creating Material Receipt")
-    mr = frappe.get_doc({
-        'doctype': 'Stock Entry',
-        'stock_entry_type': 'Material Receipt',
-        'set_posting_time': 1,
-        'posting_date':  frappe.utils.getdate('16-01-2025'),
-        'posting_time': time(23, 58)
-    })
-    for mr_item in mr_items:
-        mr.append('items', {
-            'item_code': mr_item['item_code'],
-            't_warehouse': mr_item['to_warehouse'],
-            'qty': mr_item['qty'],
-            'uom': frappe.db.get_value('Item', mr_item['item_code'], 'stock_uom') 
-        })
-        print(f"Added Item {mr_item['item_code']} Qty {mr_item['qty']} To Warehouse {mr_item['to_warehouse']} To Material Receipt")
+#     print(f"Creating Material Receipt")
+#     mr = frappe.get_doc({
+#         'doctype': 'Stock Entry',
+#         'stock_entry_type': 'Material Receipt',
+#         'set_posting_time': 1,
+#         'posting_date':  frappe.utils.getdate('16-01-2025'),
+#         'posting_time': time(23, 58)
+#     })
+#     for mr_item in mr_items:
+#         mr.append('items', {
+#             'item_code': mr_item['item_code'],
+#             't_warehouse': mr_item['to_warehouse'],
+#             'qty': mr_item['qty'],
+#             'uom': frappe.db.get_value('Item', mr_item['item_code'], 'stock_uom') 
+#         })
+#         print(f"Added Item {mr_item['item_code']} Qty {mr_item['qty']} To Warehouse {mr_item['to_warehouse']} To Material Receipt")
 
-    try:
-        mr.insert()
-        print(f"Inserted Material Receipt")
-        mr.save()
-        mr.submit()
-        print(f"Submitted Material Receipt")
-        schedule_check_and_submit_invoice()
+#     try:
+#         mr.insert()
+#         print(f"Inserted Material Receipt")
+#         mr.save()
+#         mr.submit()
+#         print(f"Submitted Material Receipt")
+#         schedule_check_and_submit_invoice()
 
-    except Exception as e:
-        print(f'Something went wrong when inserting or submitting material receipt or scheduling schedule_check_and_submit_invoice(): {e}')
-        frappe.log_error(message=e, title='Something went wrong when inserting or submitting material receipt or scheduling schedule_check_and_submit_invoice()')
+#     except Exception as e:
+#         print(f'Something went wrong when inserting or submitting material receipt or scheduling schedule_check_and_submit_invoice(): {e}')
+#         frappe.log_error(message=e, title='Something went wrong when inserting or submitting material receipt or scheduling schedule_check_and_submit_invoice()')
 
-    return 'Created and Submitted Material Receipt'
+#     return 'Created and Submitted Material Receipt'
 
 def check_and_submit_invoice():
     print("Starting process to check and submit invoices.")
@@ -2257,16 +2265,16 @@ def schedule_check_and_submit_invoice():
     job_name="Validate & Submit Generated Sales Invoices", # specify a job name
     )
 
-def schedule_check_and_inflate_stock_for_sales_invoices():
-    frappe.enqueue(
-    check_and_inflate_stock_for_sales_invoices, # python function or a module path as string
-    queue="default", # one of short, default, long
-    timeout=86400, # pass timeout manually
-    is_async=True, # if this is True, method is run in worker
-    now=False, # if this is True, method is run directly (not in a worker) 
-    job_name="Check & Inflate Stock to Submit Sales Invoices", # specify a job name
-    posting_date='2025-01-15'
-    )
+# def schedule_check_and_inflate_stock_for_sales_invoices():
+#     frappe.enqueue(
+#     check_and_inflate_stock_for_sales_invoices, # python function or a module path as string
+#     queue="default", # one of short, default, long
+#     timeout=86400, # pass timeout manually
+#     is_async=True, # if this is True, method is run in worker
+#     now=False, # if this is True, method is run directly (not in a worker) 
+#     job_name="Check & Inflate Stock to Submit Sales Invoices", # specify a job name
+#     posting_date='2025-01-15'
+#     )
     
 # from customs_management.reorder import reorder_item
 from erpnext.stock.reorder_item import reorder_item
