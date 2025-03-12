@@ -308,7 +308,12 @@ fixtures = [
             "Overtime Request-custom_ot_multiplier_type",
             "Landed Cost Taxes and Charges-custom_foreign_currency",
             "Landed Cost"
-            "Material Request-custom_auto_reorder"
+            "Material Request-custom_auto_reorder",
+            "Landed Cost Voucher-custom_costing",
+            "Landed Cost Voucher-tariff_application",
+            "Landed Cost Voucher-customs_entry"
+
+
         )]]},
         {"dt":"Property Setter", "filters": [["name", "in",(
             "Purchase Receipt-main-title_field",
