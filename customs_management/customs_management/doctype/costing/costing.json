@@ -120,9 +120,6 @@
   {
    "fieldname": "company",
    "fieldtype": "Link",
-   "in_filter": 1,
-   "in_list_view": 1,
-   "in_standard_filter": 1,
    "label": "Company",
    "options": "Company",
    "read_only": 1,
@@ -273,12 +270,11 @@
  "is_submittable": 1,
  "links": [
   {
-   "group": "Shipment Clearing",
    "link_doctype": "Landed Cost Voucher",
    "link_fieldname": "Costing"
   }
  ],
- "modified": "2025-02-25 12:14:39.709722",
+ "modified": "2025-03-12 15:55:35.188316",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Costing",
@@ -298,6 +294,43 @@
    "role": "System Manager",
    "share": 1,
    "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Master Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
    "write": 1
   }
  ],

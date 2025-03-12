@@ -26,6 +26,7 @@ class Costing(Document):
     def on_submit(self):
         self.link_to_landed_cost_vouchers()
         self.generate_price_revision()
+        self.update_customs_entry()
 
         # doc = frappe.get_doc('Customs Entry', self.customs_entry)
         # items = doc.items
@@ -52,7 +53,10 @@ class Costing(Document):
     def link_to_landed_cost_vouchers(self):
         landed_cost_voucners = frappe.db.get_all('Landed Cost Voucher', filters={'customs_entry': self.customs_entry}, fields=['name'])
         for landed_cost_voucner in landed_cost_voucners:
-            frappe.db.set_value('Landed Cost Voucher', landed_cost_voucner, 'custom_costing', self.name)
+            frappe.db.set_value('Landed Cost Voucher', landed_cost_voucner, 'costing', self.name)
+
+    def update_customs_entry(self):
+        frappe.db.set_value('Customs Entry', self.customs_entry, 'costed', 1)
 
     @frappe.whitelist()
     def get_markup_summary(self, item_tariff_number=None, custom_markup_percentage=None):
@@ -211,7 +215,7 @@ class Costing(Document):
                 landed_cost = sum([
                     item.base_service_charge_percentage,
                     item.base_surcharge_percentage,
-                    item.base_excise_percentage,
+                    # item.base_excise_percentage,
                     item.base_duty_amount,
                     item.base_amount,
                     inland_charges

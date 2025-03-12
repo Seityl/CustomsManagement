@@ -4,6 +4,9 @@
 import json
 import re
 import html
+
+from httplib2 import Response
+from lxml import etree
 from xml.dom import minidom
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
@@ -11,7 +14,7 @@ import xml.etree.ElementTree as ET
 import frappe
 from frappe import _
 from frappe.utils.data import flt
-from frappe.utils import nowdate, nowtime
+from frappe.utils import nowdate, nowtime, today
 from frappe.model.document import Document
 
 from erpnext.setup.utils import get_exchange_rate
@@ -180,7 +183,7 @@ class CustomsEntry(Document):
 
 			self.set_item_factors()
 
-			# Add dummy data to dummy table to render custom table
+			# Add dummy data to dummy table to render custom tableF
 			self.append('tariff_breakdown', {'sr_no': 1})
 
 		except Exception as e:
@@ -235,10 +238,11 @@ class CustomsEntry(Document):
 	def get_suppliers_document_city(self):
 		supplier = frappe.db.get_value('Purchase Receipt', self.consolidation[0].reference_document, 'supplier')
 		supplier_address = frappe.db.get_value('Supplier', supplier, 'supplier_primary_address') or frappe.db.get_value('Dynamic Link', {'link_doctype': 'Supplier', 'link_name': supplier}, 'parent')
+		return supplier_address
 
-		if supplier_address:
-			city = frappe.db.get_value('Address', supplier_address, 'city')
-			return city
+		# if supplier_address:
+		# 	city = frappe.db.get_value('Address', supplier_address, 'city')
+		# 	return city
 
 	def get_suppliers_document_country(self):
 		supplier = frappe.db.get_value('Purchase Receipt', self.consolidation[0].reference_document, 'supplier')
@@ -263,10 +267,27 @@ class CustomsEntry(Document):
 		return str(len({item.customs_tariff_number for item in self.items if item.customs_tariff_number}))
 
 	def get_exporter_name(self):
-		soup = BeautifulSoup(frappe.db.get_value('Purchase Receipt', self.consolidation[0].reference_document, 'shipping_address_display'), "html.parser")
-		raw_text = soup.get_text()
-		exporter_name_text = html.unescape(raw_text)
-		return re.sub(r'\s+', ' ', exporter_name_text).strip()
+		supplier_name = self.consolidation[0].supplier_name
+		supplier_address = frappe.db.get_value('Supplier', {'supplier_name': supplier_name}, 'supplier_primary_address')
+		
+		address_1 = frappe.db.get_value('Address', supplier_address, 'address_line1') or ''
+		if address_1:
+			address_1 = address_1.strip()
+
+		address_2 = frappe.db.get_value('Address', supplier_address, 'address_line2') or ''
+		if address_2:
+			address_2 = address_2.strip()
+
+		city = frappe.db.get_value('Address', supplier_address, 'city') or ''
+		if city:
+			city = city.strip()
+			
+		return f'{supplier_name} {address_1} {address_2} {city}'
+
+		# soup = BeautifulSoup(frappe.db.get_value('Purchase Receipt', self.consolidation[0].reference_document, 'shipping_address_display'), "html.parser")
+		# raw_text = soup.get_text()
+		# exporter_name_text = html.unescape(raw_text)
+		# return re.sub(r'\s+', ' ', exporter_name_text).strip()
 
 	def get_ref_num(self):
 		return frappe.db.get_value('Purchase Receipt', self.consolidation[0].reference_document, 'custom_invoice_number')
@@ -438,8 +459,12 @@ class CustomsEntry(Document):
 				excise = round(((amount / 100) * excise_percent), 3)
 				base_excise = round((excise * conversion_rate), 3)
 
-				taxable_amount = round((amount + duty + surcharge + service_charge + excise), 3)
+				# taxable_amount = round((amount + duty + surcharge + service_charge + excise), 3)
+                
+                # Removed Excise from taxable amount
+				taxable_amount = round((amount + duty + surcharge + service_charge), 3)
 				base_taxable_amount = round((taxable_amount * conversion_rate), 3)
+
 				vat_percent = tariff_number.custom_vat_percentage
 				vat = round(((taxable_amount / 100) * vat_percent), 3)
 				base_vat = round((vat * conversion_rate), 3)
@@ -620,7 +645,7 @@ class CustomsEntry(Document):
 					insurance = flt(self.get_insurance() * percentage, 3)
 					additional_cost = freight + insurance
 					total_cost = fob + additional_cost
-
+                    
 					# TODO: Add XCD (Base) fields for base amounts rather than converting
 					consolidation_data.append({
 						'reference_doctype': 'Purchase Receipt',
@@ -739,10 +764,30 @@ class CustomsEntry(Document):
 			frappe.log_error(frappe.get_traceback(), _("Default Charges Error"))
 			frappe.throw(_("Error setting default charges: {0}").format(str(e)))
 
+	def get_xml_file_name(self):
+		name = today()
+		suppliers = []
+
+		for row in self.consolidation:
+			if row.supplier_name not in suppliers:
+				name += '-' + row.supplier_name 
+				suppliers.append(row.supplier_name)
+                
+		if len(self.consolidation) > 1:
+			name += '-CONSOL'
+            
+		name += '.xml'
+		return name
+		
 def prettify(elem):
     rough_string = ET.tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent='  ')
+	# rough_string = ET.tostring(elem, 'utf-8', pretty_print = True, xml_declaration = True, encoding='UTF-8')
+	# return rough_string
+    # reparsed = minidom.parseString(rough_string)
+    # return reparsed.toprettyxml(indent='  ').strip()  # Strip removes the XML declaration
+
 
 def build_export_release(doc):
     export_release = ET.Element('Export_release')
@@ -752,7 +797,7 @@ def build_export_release(doc):
     ET.SubElement(export_release, 'Time_of_exit')
     
     office_code = ET.SubElement(export_release, 'Actual_office_of_exit_code')
-    office_code.text = doc.office_code
+    ET.SubElement(office_code, 'null')
 
     office_name = ET.SubElement(export_release, 'Actual_office_of_exit_name')
     ET.SubElement(office_name, 'null')
@@ -782,7 +827,7 @@ def build_property(doc, settings):
     total_packages.text = str(doc.number_of_packages)
     
     place_decl = ET.SubElement(property_elem, 'Place_of_declaration')
-    place_decl.text = doc.incoterm
+    ET.SubElement(place_decl, 'null')
     
     ET.SubElement(property_elem, 'Date_of_declaration')
     
@@ -805,7 +850,7 @@ def build_identification(doc, settings):
 	decl_type.text = settings.declaration_type
 
 	proc_code = ET.SubElement(type_group, 'Declaration_gen_procedure_code')
-	proc_code.text = settings.declaration_type
+	proc_code.text = settings.declaration_gen
 
 	transit_doc = ET.SubElement(type_group, 'Type_of_transit_document')
 	ET.SubElement(transit_doc, 'null')
@@ -833,7 +878,7 @@ def build_identification(doc, settings):
 
 	ET.SubElement(assessment, 'Date')
 
-	receipt = ET.SubElement(identification, 'Receipt')
+	receipt = ET.SubElement(identification, 'receipt')
 
 	serial_number = ET.SubElement(receipt, 'Serial_number')
 
@@ -907,7 +952,7 @@ def build_general_information(doc, settings):
 
 	export_country = ET.SubElement(export_elem, 'Export_country_code')
 	export_country.text = doc.get_country_code()
-
+	
 	ET.SubElement(export_elem, 'Export_country_region')
 
 	destination = ET.SubElement(country, 'Destination')
@@ -916,9 +961,6 @@ def build_general_information(doc, settings):
 	dest_country.text = settings.destination_country_code
 
 	ET.SubElement(destination, 'Destination_country_region')
-
-	value_details = ET.SubElement(general_info, 'Value_details')
-	value_details.text = str(doc.total_amount_for_split)
 
 	ET.SubElement(general_info, 'CAP')
 
@@ -948,11 +990,14 @@ def build_transport(doc):
 	border_identity = ET.SubElement(border_info, 'Identity')
 	border_identity.text = doc.transportation_service
 
-	nationality = ET.SubElement(border_identity, 'Nationality')
+	nationality = ET.SubElement(border_info, 'Nationality')
 	ET.SubElement(nationality, 'null')
 
+	mode = ET.SubElement(border_info, 'Mode')
+	mode.text = '1'
+
 	inland_mode = ET.SubElement(means, 'Inland_mode_of_transport')
-	inland_mode.text = doc.mode_of_transport
+	ET.SubElement(inland_mode, 'null')
 
 	delivery_terms = ET.SubElement(transport, 'Delivery_terms')
 
@@ -974,8 +1019,7 @@ def build_transport(doc):
 	pl_code = ET.SubElement(place_of_loading, 'Code')
 	ET.SubElement(pl_code, 'null')
 
-	pl_name = ET.SubElement(place_of_loading, 'Name')
-	pl_name.text = doc.port_location
+	ET.SubElement(place_of_loading, 'Name')
 
 	ET.SubElement(place_of_loading, 'Country')
 
@@ -989,11 +1033,9 @@ def build_financial(doc, settings):
 
 	transaction = ET.SubElement(financial, 'Financial_transaction')
 
-	code1 = ET.SubElement(transaction, 'code1')
-	code1.text = doc.currency
+	ET.SubElement(transaction, 'code1')
 
-	code2 = ET.SubElement(transaction, 'code2')
-	code2.text = str(doc.conversion_rate)
+	ET.SubElement(transaction, 'code2')
 
 	bank = ET.SubElement(financial, 'Bank')
 
@@ -1015,14 +1057,15 @@ def build_financial(doc, settings):
 	term_desc = ET.SubElement(terms, 'Description')
 	ET.SubElement(term_desc, 'null')
 
-	total_invoice = ET.SubElement(financial, 'Total_invoice')
-	total_invoice.text = str(doc.base_total_invoice)
+	ET.SubElement(financial, 'Total_invoice')
 
 	deffered_payment_reference = ET.SubElement(financial, 'Deffered_payment_reference')
-	ET.SubElement(deffered_payment_reference, 'null')
+	deffered_payment_reference.text = settings.declarant_reference_no
+	# deffered_payment_reference.text = str(doc.total_amount_for_split)
+	# ET.SubElement(deffered_payment_reference, 'null')
 
 	mop = ET.SubElement(financial, 'Mode_of_payment')
-	mop.text = settings.mode_of_payment
+	mop.text = settings.mode_of_payment.upper()
 
 	amounts = ET.SubElement(financial, 'Amounts')
 
@@ -1044,7 +1087,7 @@ def build_financial(doc, settings):
 
 	ET.SubElement(guarantee, 'Date')
 
-	excluded_country = ET.SubElement(amounts, 'Excluded_country')
+	excluded_country = ET.SubElement(guarantee, 'Excluded_country')
 
 	excluded_country_code = ET.SubElement(excluded_country, 'Code')
 	ET.SubElement(excluded_country_code, 'null')
@@ -1133,58 +1176,58 @@ def build_valuation(doc, settings):
 
 	gs_external = ET.SubElement(valuation, 'Gs_external_freight')
 
-	ext_amount = ET.SubElement(gs_external, 'Amount_foreign_currency')
-	ext_amount.text = str(doc.get_freight())
+	ext_amount1 = ET.SubElement(gs_external, 'Amount_foreign_currency')
+	ext_amount1.text = f'{doc.get_freight():.0f}'
 
-	ext_currency = ET.SubElement(gs_external, 'Currency_code')
-	ext_currency.text = doc.currency
+	ext_currency1 = ET.SubElement(gs_external, 'Currency_code')
+	ext_currency1.text = doc.currency
 
-	ext_rate = ET.SubElement(gs_external, 'Currency_rate')
-	ext_rate.text = str(doc.conversion_rate)
+	ext_rate1 = ET.SubElement(gs_external, 'Currency_rate')
+	ext_rate1.text = str(doc.conversion_rate)
 
 	gs_internal = ET.SubElement(valuation, 'Gs_internal_freight')
 
-	ext_amount = ET.SubElement(gs_internal, 'Amount_foreign_currency')
-	ext_amount.text = str(doc.get_freight())
+	ext_amount2 = ET.SubElement(gs_internal, 'Amount_foreign_currency')
+	ext_amount2.text = '0.0'
 
-	ext_currency = ET.SubElement(gs_internal, 'Currency_code')
-	ext_currency.text = doc.currency
+	ext_currency2 = ET.SubElement(gs_internal, 'Currency_code')
+	ext_currency2.text = doc.currency
 
-	ext_rate = ET.SubElement(gs_internal, 'Currency_rate')
-	ext_rate.text = str(doc.conversion_rate)
+	ext_rate2 = ET.SubElement(gs_internal, 'Currency_rate')
+	ext_rate2.text = str(doc.conversion_rate)
 
 	gs_insurance = ET.SubElement(valuation, 'Gs_insurance')
 
-	ext_amount = ET.SubElement(gs_insurance, 'Amount_foreign_currency')
-	ext_amount.text = str(doc.get_insurance())
+	ext_amount3 = ET.SubElement(gs_insurance, 'Amount_foreign_currency')
+	ext_amount3.text = '0'
 
-	ext_currency = ET.SubElement(gs_insurance, 'Currency_code')
-	ext_currency.text = doc.currency
+	ext_currency3 = ET.SubElement(gs_insurance, 'Currency_code')
+	ext_currency3.text = doc.currency
 
-	ext_rate = ET.SubElement(gs_insurance, 'Currency_rate')
-	ext_rate.text = str(doc.conversion_rate)
+	ext_rate3 = ET.SubElement(gs_insurance, 'Currency_rate')
+	ext_rate3.text = str(doc.conversion_rate)
 
 	gs_other_cost = ET.SubElement(valuation, 'Gs_other_cost')
 
-	ext_amount = ET.SubElement(gs_other_cost, 'Amount_foreign_currency')
-	ext_amount.text = '0'
+	ext_amount4 = ET.SubElement(gs_other_cost, 'Amount_foreign_currency')
+	ext_amount4.text = '0'
 
-	ext_currency = ET.SubElement(gs_other_cost, 'Currency_code')
-	ext_currency.text = doc.currency
+	ext_currency4 = ET.SubElement(gs_other_cost, 'Currency_code')
+	ext_currency4.text = doc.currency
 
-	ext_rate = ET.SubElement(gs_other_cost, 'Currency_rate')
-	ext_rate.text = str(doc.conversion_rate)
+	ext_rate4 = ET.SubElement(gs_other_cost, 'Currency_rate')
+	ext_rate4.text = str(doc.conversion_rate)
 
-	gs_decuction = ET.SubElement(valuation, 'Gs_decuction')
+	gs_deduction = ET.SubElement(valuation, 'Gs_deduction')
 
-	ext_amount = ET.SubElement(gs_decuction, 'Amount_foreign_currency')
-	ext_amount.text = '0'
+	ext_amount5 = ET.SubElement(gs_deduction, 'Amount_foreign_currency')
+	ext_amount5.text = '0'
 
-	ext_currency = ET.SubElement(gs_decuction, 'Currency_code')
-	ext_currency.text = doc.currency
+	ext_currency5 = ET.SubElement(gs_deduction, 'Currency_code')
+	ext_currency5.text = doc.currency
 
-	ext_rate = ET.SubElement(gs_decuction, 'Currency_rate')
-	ext_rate.text = str(doc.conversion_rate)
+	ext_rate5 = ET.SubElement(gs_deduction, 'Currency_rate')
+	ext_rate5.text = str(doc.conversion_rate)
 
 	total = ET.SubElement(valuation, 'Total')
 
@@ -1262,7 +1305,7 @@ def build_item(doc, settings, supplier_link_code, tariff_code, item_price):
 	suppplementary_unit_quantity.text = str(doc.total_item_qty)
 
 	item_price = ET.SubElement(tarification, 'Item_price')
-	item_price.text = item_price
+	item_price.text = str(doc.total_amount_for_split)
 
 	valuation_method_code = ET.SubElement(tarification, 'Valuation_method_code')
 	ET.SubElement(valuation_method_code, 'null')
@@ -1340,7 +1383,8 @@ def build_item(doc, settings, supplier_link_code, tariff_code, item_price):
 
 	ET.SubElement(valuation_item, 'Statistical_value').text = f"{doc.total_base_amount_for_split:.2f}"
 
-	ET.SubElement(valuation_item, 'Alpha_coeficient_of_apportionment')
+	alpha = ET.SubElement(valuation_item, 'Alpha_coeficient_of_apportionment')
+	alpha.text = '1.0'
 
 	item_invoice = ET.SubElement(valuation_item, 'Item_Invoice')
 
@@ -1351,9 +1395,9 @@ def build_item(doc, settings, supplier_link_code, tariff_code, item_price):
 	ET.SubElement(item_invoice, 'Currency_rate').text = f"{doc.conversion_rate:.4f}"
 
 	cost_sections = [
-		('item_external_freight', doc.get_freight()),
+		('item_external_freight', 0),
 		('item_internal_freight', 0),
-		('item_insurance', doc.get_insurance()),
+		('item_insurance', 0),
 		('item_other_cost', 0),
 		('item_deduction', 0)
 	]
@@ -1367,55 +1411,55 @@ def build_item(doc, settings, supplier_link_code, tariff_code, item_price):
 	return item_elem
 
 def build_suppliers_documents(doc, settings):
-    suppliers_docs = ET.Element('Suppliers_documents')
+	suppliers_docs = ET.Element('Suppliers_documents')
 
-    suppliers_document_itmlink = ET.SubElement(suppliers_docs, 'Suppliers_document_itmlink')
-    suppliers_document_itmlink.text = ''
-    
-    if doc.consolidation:
-        suppliers_document_code = ET.SubElement(suppliers_docs, 'Suppliers_document_code')
-        suppliers_document_code.text = ''
+	suppliers_document_itmlink = ET.SubElement(suppliers_docs, 'Suppliers_document_itmlink')
+	ET.SubElement(suppliers_document_itmlink, 'null')
+
+	if doc.consolidation:
+		suppliers_document_code = ET.SubElement(suppliers_docs, 'Suppliers_document_code')
+		ET.SubElement(suppliers_document_code, 'null')
 		
-        suppliers_document_name = ET.SubElement(suppliers_docs, 'Suppliers_document_name')
-        suppliers_document_name.text = doc.get_suppliers_document_name()
+		suppliers_document_name = ET.SubElement(suppliers_docs, 'Suppliers_document_name')
+		suppliers_document_name.text = doc.get_suppliers_document_name()
 
-        suppliers_document_country = ET.SubElement(suppliers_docs, 'Suppliers_document_country')
-        suppliers_document_country.text = doc.get_suppliers_document_country()
+		ET.SubElement(suppliers_docs, 'Suppliers_document_country')
 
-        suppliers_document_city = ET.SubElement(suppliers_docs, 'Suppliers_document_city')
-        suppliers_document_city.text = doc.get_suppliers_document_city()
+		suppliers_document_city = ET.SubElement(suppliers_docs, 'Suppliers_document_city')
+		suppliers_document_city.text = doc.get_suppliers_document_city()
 
-        suppliers_document_street = ET.SubElement(suppliers_docs, 'Suppliers_document_street')
-        suppliers_document_street.text = doc.get_suppliers_document_street()
+		suppliers_document_street = ET.SubElement(suppliers_docs, 'Suppliers_document_street')
+		ET.SubElement(suppliers_document_street, 'null')
+		# suppliers_document_street.text = doc.get_suppliers_document_street()
 
-        suppliers_document_telephone = ET.SubElement(suppliers_docs, 'Suppliers_document_telephone')
-        ET.SubElement(suppliers_document_telephone, 'null')
+		suppliers_document_telephone = ET.SubElement(suppliers_docs, 'Suppliers_document_telephone')
+		ET.SubElement(suppliers_document_telephone, 'null')
 
-        suppliers_document_fax = ET.SubElement(suppliers_docs, 'Suppliers_document_fax')
-        ET.SubElement(suppliers_document_fax, 'null')
+		suppliers_document_fax = ET.SubElement(suppliers_docs, 'Suppliers_document_fax')
+		ET.SubElement(suppliers_document_fax, 'null')
 
-        suppliers_document_zip_code = ET.SubElement(suppliers_docs, 'Suppliers_document_zip_code')
-        ET.SubElement(suppliers_document_zip_code, 'null')
+		suppliers_document_zip_code = ET.SubElement(suppliers_docs, 'Suppliers_document_zip_code')
+		ET.SubElement(suppliers_document_zip_code, 'null')
 
-        suppliers_document_invoice_nbr = ET.SubElement(suppliers_docs, 'Suppliers_document_invoice_nbr')
-        suppliers_document_invoice_nbr.text = doc.get_suppliers_document_invoice_nbr()
+		suppliers_document_invoice_nbr = ET.SubElement(suppliers_docs, 'Suppliers_document_invoice_nbr')
+		suppliers_document_invoice_nbr.text = doc.get_suppliers_document_invoice_nbr()
 
-        suppliers_document_invoice_amt = ET.SubElement(suppliers_docs, 'Suppliers_document_invoice_amt')
-        ET.SubElement(suppliers_document_invoice_amt, 'null')
+		suppliers_document_invoice_amt = ET.SubElement(suppliers_docs, 'Suppliers_document_invoice_amt')
+		ET.SubElement(suppliers_document_invoice_amt, 'null')
 
-        suppliers_document_type_code = ET.SubElement(suppliers_docs, 'Suppliers_document_type_code')
-        suppliers_document_type_code.text = settings.suppliers_document_type_code
+		suppliers_document_type_code = ET.SubElement(suppliers_docs, 'Suppliers_document_type_code')
+		suppliers_document_type_code.text = settings.suppliers_document_type_code
 
-        suppliers_document_date = ET.SubElement(suppliers_docs, 'Suppliers_document_date')
-        suppliers_document_date.text = doc.get_suppliers_document_date()
+		suppliers_document_date = ET.SubElement(suppliers_docs, 'Suppliers_document_date')
+		suppliers_document_date.text = doc.get_suppliers_document_date()
 
-        suppliers_document_c75_nbr = ET.SubElement(suppliers_docs, 'Suppliers_document_c75_nbr')
-        ET.SubElement(suppliers_document_c75_nbr, 'null')
+		suppliers_document_c75_nbr = ET.SubElement(suppliers_docs, 'Suppliers_document_c75_nbr')
+		ET.SubElement(suppliers_document_c75_nbr, 'null')
 
-        suppliers_document_c75_date = ET.SubElement(suppliers_docs, 'Suppliers_document_c75_date')
-        suppliers_document_c75_date.text = ''
+		suppliers_document_c75_date = ET.SubElement(suppliers_docs, 'Suppliers_document_c75_date')
+		suppliers_document_c75_date.text = ''
 		
-        return suppliers_docs
+		return suppliers_docs
 
 @frappe.whitelist()
 def generate_xml_file(name):
@@ -1426,7 +1470,7 @@ def generate_xml_file(name):
 	"""
 	doc = frappe.get_doc('Customs Entry', name)
 	settings = frappe.get_doc('Customs Management Settings')
-
+	xml_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
 	root = ET.Element('ASYCUDA')
 
 	root.append(build_export_release(doc))
@@ -1445,7 +1489,7 @@ def generate_xml_file(name):
 	root.append(build_transit(doc))
 	root.append(build_valuation(doc, settings))
 
-	items_container = ET.Element('Items')
+	# items_container = ET.Element('Items')
 
 	for tariff_summary in doc.tariff_number_summary:
 		for item in doc.items:
@@ -1459,16 +1503,54 @@ def generate_xml_file(name):
 
 		if supplier_for_tariff:
 			supplier_link_code = doc.get_suppliers_link_code(supplier_for_tariff)
-			items_container.append(build_item(doc, settings, supplier_link_code, tariff_code, item_price))
+			root.append(build_item(doc, settings, supplier_link_code, tariff_code, item_price))
 			
-	root.append(items_container)
+	# root.append(items_container)
 	root.append(build_suppliers_documents(doc, settings))
 
-	xml_str = prettify(root)
+	# # root = prettify(root)
+	# # Convert the ElementTree to a string and prepend the XML declaration
+	# # xml_str = ET.tostring(root, encoding='utf-8', method='xml').decode('utf-8')
 
-	file_name = f'{name}.xml'
-	frappe.local.response.filename = file_name
-	frappe.local.response.filecontent = xml_str
+	# # Prepend the XML declaration to the string
+	# # full_xml = xml_declaration + root
+
+	# 	# Create the XML declaration as a string
+    # # Create the XML declaration as a string
+	# # xml_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n'
+
+	# # Format the XML using prettify (no declaration included in the formatted string)
+	# formatted_xml = prettify(root)
+
+	# # Prepend the XML declaration to the formatted XML
+	# # full_xml = xml_declaration + formatted_xml
+
+    # # S
+	# file_name = f'{name}.xml'
+	# frappe.local.response.filename = file_name
+	# frappe.local.response.filecontent = formatted_xml
+	# frappe.local.response.type = 'download'
+
+	# return root
+    # Create the tree and convert it to a string with declaration
+    # Generate pretty XML
+	pretty_xml = prettify(root)
+
+	# Replace the XML declaration
+	new_declaration = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>'
+	xml_lines = pretty_xml.split('\n')
+	if xml_lines and xml_lines[0].strip().startswith('<?xml'):
+		xml_lines[0] = new_declaration
+	else:
+		xml_lines.insert(0, new_declaration)
+	full_xml = '\n'.join(xml_lines)
+
+	# Set response for download (encode to bytes)
+
+	download_xml_file(doc, full_xml.encode('utf-8'))
+ 
+def download_xml_file(doc, data):
+	frappe.local.response.filename = doc.get_xml_file_name()
+	frappe.local.response.filecontent = data
 	frappe.local.response.type = 'download'
-
-	return xml_str
+	frappe.response.display_content_as = 'attachment'

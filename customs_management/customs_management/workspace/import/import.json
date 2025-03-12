@@ -9,13 +9,13 @@
    "label": "Top Suppliers"
   }
  ],
- "content": "[{\"id\":\"MNXVqZgh1E\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Import</span>\",\"col\":12}},{\"id\":\"GdnY71pvya\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Weekly Invoice Verifications\",\"col\":6}},{\"id\":\"lErTsinNdp\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Top Suppliers\",\"col\":6}},{\"id\":\"7kDMlWJUmW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"p1z-JYKpb-\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"MxEHl1sz5Q\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Invoice Verification\",\"col\":4}},{\"id\":\"GCAIm5ym15\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customs Entry\",\"col\":4}},{\"id\":\"ByNGOzvunN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Costing\",\"col\":4}},{\"id\":\"e3fdwCLfEq\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"kBNnQ0SLQ7\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Tariff Numbers\",\"col\":3}},{\"id\":\"rf61PkEObW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"X9RE7Plb7L\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Import &amp; Settings</b></span>\",\"col\":12}},{\"id\":\"DnZnmXUO__\",\"type\":\"card\",\"data\":{\"card_name\":\"Import Documents\",\"col\":4}},{\"id\":\"AmeuucFj-B\",\"type\":\"card\",\"data\":{\"card_name\":\"Master Data\",\"col\":4}},{\"id\":\"cBx1OfEzMv\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}}]",
+ "content": "[{\"id\":\"MNXVqZgh1E\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Import</span>\",\"col\":12}},{\"id\":\"GdnY71pvya\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Weekly Invoice Verifications\",\"col\":6}},{\"id\":\"lErTsinNdp\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Top Suppliers\",\"col\":6}},{\"id\":\"7kDMlWJUmW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"p1z-JYKpb-\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"MxEHl1sz5Q\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Invoices\",\"col\":4}},{\"id\":\"GCAIm5ym15\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customs Entry\",\"col\":4}},{\"id\":\"ByNGOzvunN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Costing\",\"col\":4}},{\"id\":\"e3fdwCLfEq\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"kBNnQ0SLQ7\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Tariff Numbers\",\"col\":3}},{\"id\":\"rf61PkEObW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"X9RE7Plb7L\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Import &amp; Settings</b></span>\",\"col\":12}},{\"id\":\"DnZnmXUO__\",\"type\":\"card\",\"data\":{\"card_name\":\"Import Documents\",\"col\":4}},{\"id\":\"AmeuucFj-B\",\"type\":\"card\",\"data\":{\"card_name\":\"Master Data\",\"col\":4}},{\"id\":\"cBx1OfEzMv\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}}]",
  "creation": "2023-07-12 02:50:29.301280",
  "custom_blocks": [],
  "docstatus": 0,
  "doctype": "Workspace",
  "for_user": "",
- "hide_custom": 0,
+ "hide_custom": 1,
  "icon": "liabilities",
  "idx": 0,
  "is_hidden": 0,
@@ -106,7 +106,7 @@
    "type": "Link"
   }
  ],
- "modified": "2025-03-03 19:42:12.253656",
+ "modified": "2025-03-12 15:53:38.239823",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Import",
@@ -116,7 +116,7 @@
    "number_card_name": "Tariff Numbers"
   }
  ],
- "owner": "Administrator",
+ "owner": "schoudhary@dexciss.com",
  "parent_page": "Buying",
  "public": 1,
  "quick_lists": [],
@@ -131,18 +131,10 @@
  "sequence_id": 22.0,
  "shortcuts": [
   {
-   "color": "Orange",
+   "color": "Yellow",
    "doc_view": "List",
-   "format": "{}",
-   "label": "Costing",
-   "link_to": "Costing",
-   "stats_filter": "[[\"Costing\",\"docstatus\",\"=\",\"0\",false]]",
-   "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "Invoice Verification",
+   "format": "{} to verify",
+   "label": "Invoices",
    "link_to": "Invoice Verification",
    "stats_filter": "[[\"Invoice Verification\",\"docstatus\",\"=\",\"0\",false]]",
    "type": "DocType"
@@ -150,10 +142,19 @@
   {
    "color": "Cyan",
    "doc_view": "List",
-   "format": "{} To Submit",
+   "format": "{} to complete",
    "label": "Customs Entry",
    "link_to": "Customs Entry",
-   "stats_filter": "{\"docstatus\":[\"=\",\"0\"]}",
+   "stats_filter": "[[\"Customs Entry\",\"docstatus\",\"=\",\"0\",false]]",
+   "type": "DocType"
+  },
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "format": "{} to cost",
+   "label": "Costing",
+   "link_to": "Costing",
+   "stats_filter": "[[\"Costing\",\"docstatus\",\"=\",\"0\",false]]",
    "type": "DocType"
   }
  ],

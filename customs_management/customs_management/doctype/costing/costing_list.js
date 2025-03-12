@@ -1,4 +1,4 @@
-frappe.listview_settings['Customs Entry'] = {
+frappe.listview_settings['Costing'] = {
     hide_name_column: true
 }
 
@@ -16,15 +16,15 @@ function extend_listview_event(doctype, event, callback) {
     };
 }
 
-extend_listview_event("Customs Entry", "refresh", function (listview) {
+extend_listview_event("Costing", "refresh", function (listview) {
     $(document).ready(function() {
         $('span[data-filter="workflow_state,=,Draft"]').each(function() {
             $(this).removeClass('red').addClass('gray');
         });
     });
     $(document).ready(function() {
-        $('span[data-filter="workflow_state,=,Download XML"]').each(function() {
-            $(this).removeClass('gray').addClass('blue');
+        $('span[data-filter="workflow_state,=,Costed"]').each(function() {
+            $(this).removeClass('gray').addClass('yellow');
         });
     });
     $(document).ready(function() {
@@ -33,8 +33,8 @@ extend_listview_event("Customs Entry", "refresh", function (listview) {
         });
     });
     $(document).ready(function() {
-        $('span[data-filter="workflow_state,=,Rejected"]').each(function() {
-            $(this).removeClass('red').addClass('orange');
+        $('span[data-filter="workflow_state,=,Priced"]').each(function() {
+            $(this).removeClass('gray').addClass('blue');
         });
     });
     $(document).ready(function() {

@@ -81,6 +81,7 @@ frappe.ui.form.on("Costing", {
 			return {
 				filters: [
 					['docstatus', '=', 1],
+					['costed', '=', 0]
 			    ]
 			};
 		});

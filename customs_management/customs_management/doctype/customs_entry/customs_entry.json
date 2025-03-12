@@ -18,23 +18,24 @@
   "conversion_rate",
   "purchases_list",
   "total_item_qty",
+  "costed",
   "summary_section",
   "number_of_packages",
   "office_code",
+  "mode_of_transport",
+  "port_location",
   "total_amount",
   "total_invoice",
   "total_amount_for_split",
-  "mode_of_transport",
-  "port_location",
   "column_break_3ut9m",
   "package_type",
   "transportation_service",
+  "incoterm",
+  "mass_kg",
   "total_amount_company_currency",
   "base_total_invoice",
   "total_base_amount_for_split",
-  "incoterm",
   "distribute_charges_based_on",
-  "mass_kg",
   "section_break_lnnby",
   "additional_charges",
   "item_details_tab",
@@ -336,12 +337,19 @@
    "fieldtype": "Currency",
    "label": "Total Invoice (XCD)",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "costed",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
  "links": [],
  "make_attachments_public": 1,
- "modified": "2025-02-25 11:56:35.603976",
+ "modified": "2025-03-12 15:57:13.867199",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Customs Entry",
@@ -387,27 +395,22 @@
    "share": 1,
    "write": 1
   }
-],
-
-    "custom_perms": [
-        {
-            "role": "Import Manager",
-            "permlevel": 0,
-            "name": "Customs Entry",
-            "read": 1,
-            "write": 1,
-            "create": 1,
-            "submit": 1,
-            "cancel": 1,
-            "delete": 1
-        }
-    ],
+ ],
  "search_fields": "bill_of_lading",
  "show_name_in_global_search": 1,
  "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
+ "states": [
+  {
+   "color": "Orange",
+   "title": "Rejected"
+  },
+  {
+   "color": "Red",
+   "title": "Canceled"
+  }
+ ],
  "title_field": "bill_of_lading",
  "track_changes": 1
 }
