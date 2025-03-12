@@ -139,10 +139,10 @@ doc_events = {
     #     "on_submit": "customs_management.api.create_tariffapp",
     #     "on_update_after_submit": "customs_management.api.create_tariffapp",
     # },
-    "Purchase Invoice": {
-        "on_submit": "customs_management.api.create_tariffapp",
-        "on_update_after_submit": "customs_management.api.create_tariffapp",
-    },
+    # "Purchase Invoice": {
+    #     "on_submit": "customs_management.api.create_tariffapp",
+    #     "on_update_after_submit": "customs_management.api.create_tariffapp",
+    # },
     "Salary Slip": {
         "before_save": "customs_management.api.calculate_working_salaryslip",
         
@@ -159,37 +159,39 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"customs_management.tasks.all"
-# 	],
-# 	"daily": [
-# 		"customs_management.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"customs_management.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"customs_management.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"customs_management.tasks.monthly"
-# 	],
-# 	"cron": {
-#         "*/3 * * * *": [
-#             "customs_management.api.create_sales_invoice",
-#             "customs_management.api.schedule_create_sales_invoice",
-#             "customs_management.api.schedule_create_sales_invoice_from_ticket"
-
-#         ],
-#         "0 0 * * *": [
-#             "customs_management.api.send_outstanding_material_request_emails"
-#         ],
-#         "0 14 * * *": [
-#           "customs_management.api.schedule_reorder_item"
-#         ]
-#     }
-# }
+scheduler_events = {
+	# "all": [
+	# 	"customs_management.tasks.all"
+	# ],
+	# "daily": [
+	# 	"customs_management.tasks.daily"
+	# ],
+	# "hourly": [
+	# 	"customs_management.tasks.hourly"
+	# ],
+	# "weekly": [
+	# 	"customs_management.tasks.weekly"
+	# ],
+	# "monthly": [
+	# 	"customs_management.tasks.monthly"
+	# ],
+	"cron": {
+        # "*/3 * * * *": [
+        #     "customs_management.api.create_sales_invoice",
+        #     "customs_management.api.schedule_create_sales_invoice",
+        #     "customs_management.api.schedule_create_sales_invoice_from_ticket"
+        # ],
+        "0 2 * * *": [
+            "customs_management.api.schedule_create_sales_invoice_from_ticket"
+        ]
+        # "0 0 * * *": [
+        #     "customs_management.api.send_outstanding_material_request_emails"
+        # ],
+        # "0 14 * * *": [
+        #   "customs_management.api.schedule_reorder_item"
+        # ]
+    }
+}
 
 # Testing
 # -------
