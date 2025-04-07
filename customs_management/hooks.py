@@ -135,10 +135,11 @@ doc_events = {
 		"before_save": "customs_management.api.sort_pick_list",
 		# "on_submit": "customs_management.api.create_grouping",
 	},
-    # "Purchase Receipt": {
-    #     "on_submit": "customs_management.api.create_tariffapp",
-    #     "on_update_after_submit": "customs_management.api.create_tariffapp",
-    # },
+    "Purchase Receipt": {
+        # "on_submit": "customs_management.api.create_tariffapp",
+        "on_submit": "customs_management.customs_management.doctype.invoice_verification.invoice_verification.create_invoice_verification",
+        # "on_update_after_submit": "customs_management.api.create_tariffapp",
+    },
     # "Purchase Invoice": {
     #     "on_submit": "customs_management.api.create_tariffapp",
     #     "on_update_after_submit": "customs_management.api.create_tariffapp",
@@ -182,7 +183,7 @@ scheduler_events = {
         #     "customs_management.api.schedule_create_sales_invoice_from_ticket"
         # ],
         "0 2 * * *": [
-            "customs_management.api.schedule_create_sales_invoice_from_ticket"
+            "customs_management.api.sync_counterpoint_sales"
         ]
         # "0 0 * * *": [
         #     "customs_management.api.send_outstanding_material_request_emails"

@@ -1,13 +1,14 @@
-import datetime
-import frappe
 import json
-import re
-import os
-from frappe.exceptions import TimestampMismatchError
-from bs4 import BeautifulSoup
-from erpnext.setup.utils import get_exchange_rate
-from erpnext.stock.doctype.stock_reconciliation.stock_reconciliation import get_items
 import requests
+import datetime
+import pymssql
+
+from bs4 import BeautifulSoup
+
+from customs_management.customs_management.doctype import counterpoint_sales_
+import frappe
+
+from erpnext.setup.utils import get_exchange_rate
 
 @frappe.whitelist()
 def update_bin_stock(item_data):
@@ -345,7 +346,7 @@ def tariff_application_data(name='TAF-01001',doct="Purchase Receipt",docu='MAT-P
         print("supplier",docu,supplier,supplier_name,address_name,address[2])
     else:
         print("supplier",docu,supplier,supplier_name,address_name,address)
-    items=frappe.db.get_all("Tariff Application Item",{"parent":name},["*"])
+    items=frappe.db.get_all("Invoice Verification Item",{"parent":name},["*"])
     print("items",items)
     print("len",len(items))
     tariff_data={}
@@ -1619,99 +1620,205 @@ def create_return_log(return_name, message):
   else:
       log.insert()
 
-@frappe.whitelist()
-def create_counterpoint_sales_ticket():
-  data = frappe.request.data
+def schedule_sync_counterpoint_sales():
+    frappe.enqueue(
+        sync_counterpoint_sales,
+        queue = 'short', 
+        timeout = 3600,
+        is_async = True,
+        now = True, 
+        job_name = 'Sync Counterpoint Sales',
+    )
 
-  if not data:
-    frappe.log_error(message='Failed to receive data for ticket creation.', title='Data Not Found')
-    raise('Failed to receive data for ticket creation.')
+def sync_counterpoint_sales():
+	locations = frappe.get_doc('Store Location Mapping').store_location_mapping
+	tickets = []
+	for location in locations:
+		location_id = location.store_location
+		location_sales = get_counterpoint_sales(location_id)
+		tickets.extend(location_sales)
+	for ticket in tickets:
+		frappe.enqueue(
+			create_counterpoint_sales_ticket,
+			queue = 'short', 
+			timeout = 3600,
+			is_async = True,
+			now = False, 
+			job_name = f"Sync Ticket {ticket['ticket_number']}",
+			ticket = ticket
+		)
+	
+def get_counterpoint_sales(location_id):
+	conn = pymssql.connect(
+		server = '10.0.10.5',
+		user = 'SA',
+		password = 'Counterpoint1',
+		database = 'Jollyspharm',
+		as_dict = True
+	)
+	cursor = conn.cursor()
+	query = f"""
+		SELECT
+			PS_TKT_HIST_LIN.QTY_SOLD,
+			PS_TKT_HIST.CUST_NO,
+			PS_TKT_HIST_LIN.ITEM_NO,
+			PS_TKT_HIST_LIN.TKT_NO,
+			PS_TKT_HIST_LIN.EXT_PRC,
+			PS_TKT_HIST_LIN.EXT_COST,
+			IM_ITEM.QTY_DECS,
+			AR_CUST.NAM,
+			PS_TKT_HIST_LIN.DESCR,
+			PS_TKT_HIST_LIN.BUS_DAT,
+			PS_TKT_HIST.TKT_TYP,
+			PS_TKT_HIST_LIN.LIN_TYP,
+			PS_TKT_HIST_LIN.STK_LOC_ID,
+			PS_TKT_HIST.STK_LOC_ID,
+			PS_TKT_HIST_LIN.QTY_NUMER,
+			PS_TKT_HIST_LIN.QTY_DENOM
+		FROM
+			PS_TKT_HIST
+		LEFT OUTER JOIN
+			AR_CUST
+		ON
+			PS_TKT_HIST.CUST_NO = AR_CUST.CUST_NO
+		INNER JOIN
+			PS_TKT_HIST_LIN 
+		ON
+			PS_TKT_HIST.BUS_DAT = PS_TKT_HIST_LIN.BUS_DAT AND PS_TKT_HIST.DOC_ID = PS_TKT_HIST_LIN.DOC_ID
+		LEFT OUTER JOIN
+			IM_ITEM IM_ITEM
+		ON
+			PS_TKT_HIST_LIN.ITEM_NO = IM_ITEM.ITEM_NO
+		WHERE
+			PS_TKT_HIST_LIN.STR_ID = {location_id} AND
+			PS_TKT_HIST.TKT_TYP <> 'A' AND
+			PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+	"""
+	cursor.execute(query)
+	results = cursor.fetchall()
+	ticket_data = {}
 
-  ticket = json.loads(data) 
+	for item in results:
+		if item['TKT_NO'] not in ticket_data:
+			ticket_data[item['TKT_NO']] = {
+				"items": [
+					{
+					"item_code": item['ITEM_NO'],
+					"item_name": item['DESCR'],
+					"qty": item['QTY_SOLD'],
+					"price": item['EXT_PRC'],
+					"exact_cost": item['EXT_COST'],
+					"description": item['DESCR'],
+					},
+				], 
+				"customer_number": item['CUST_NO'],
+				"customer_name": item['NAM'],
+				"ticket_number": item['TKT_NO'],
+				"ticket_type": item['TKT_TYP'],
+				"post_date": item['BUS_DAT'],
+				"ticket_date": item['BUS_DAT'],
+				"ticket_location": item['STK_LOC_ID'][0],
+				"line_type": item['LIN_TYP'],
+				"total_quantity": item['QTY_SOLD'],
+			}
+		else: 
+			item_data = {
+				"item_code": item['ITEM_NO'],
+				"item_name": item['DESCR'],
+				"qty": item['QTY_SOLD'],
+				"price": item['EXT_PRC'],
+				"exact_cost": item['EXT_COST'],
+				"description": item['DESCR'],
+			}
+			ticket_data[item['TKT_NO']]["total_quantity"] += item['QTY_SOLD']
+			ticket_data[item['TKT_NO']]["items"].append(item_data)
+		
+	tickets = [{**v} for k, v in ticket_data.items()]
 
-  is_return = any(item['qty'] < 0 for item in ticket['items'])
+	return tickets
 
-  if is_return:
-    return_exists = frappe.db.exists('CounterPoint Returns', {'ticket_number': ticket['ticket_number']})
+def create_counterpoint_sales_ticket(ticket):
+	is_return = any(item['qty'] < 0 for item in ticket['items'])
+	if is_return:
+		if frappe.db.exists('CounterPoint Returns', {'ticket_number': ticket['ticket_number']}):
+			return
 
-    if return_exists:
-      return {'message': f'Sales Return already created.'}
+		counterpoint_return = frappe.new_doc('CounterPoint Returns')
+		counterpoint_return.update({
+			'ticket_location': ticket['ticket_location'],
+			'ticket_number': ticket['ticket_number'],
+			'customer_name': ticket['customer_name'],
+			'posting_date': ticket['post_date'],
+			'customer': ticket['customer_number'],
+			'ticket_date': ticket['ticket_date']
+		})
+		counterpoint_sales = frappe.new_doc('CounterPoint Sales')
+		counterpoint_sales.update({
+			'ticket_location': ticket['ticket_location'],
+			'total_quantity': ticket['total_quantity'],
+			'ticket_number': ticket['ticket_number'],
+			'customer_name': ticket['customer_name'],
+			'customer': ticket['customer_number'],
+			'ticket_date': ticket['ticket_date'],
+			'ticket_type': ticket['ticket_type'],
+			'posting_date': ticket['post_date'],
+			'line_type': ticket['line_type']
+		})
+		for item in ticket['items']:
+			if item['qty'] < 0:
+				counterpoint_return.append('items', {
+					'item': item['item_code'],
+					'item_name': item['item_name'],
+					'qty': item['qty'],
+					'cost': item['exact_cost'],
+					'price': item['price']
+				})
+			else:
+				counterpoint_sales.append('items', {
+					'item': item['item_code'],
+					'item_name': item['item_name'],
+					'qty': item['qty'],
+					'cost': item['exact_cost'],
+					'price': item['price']
+				})
 
-    counterpoint_return = frappe.new_doc('CounterPoint Returns')
-    counterpoint_return.ticket_number = ticket['ticket_number']
-    counterpoint_return.customer = ticket['customer_number']
-    counterpoint_return.customer_name = ticket['customer_name']
-    counterpoint_return.posting_date = ticket['posting_date']
-    counterpoint_return.ticket_date = ticket['ticket_date']
-    counterpoint_return.ticket_location = ticket['ticket_location']
+		counterpoint_return.insert()
 
-    counterpoint_sales = frappe.new_doc('CounterPoint Sales')
-    counterpoint_sales.ticket_number = ticket['ticket_number']
-    counterpoint_sales.customer = ticket['customer_number']
-    counterpoint_sales.customer_name = ticket['customer_name']
-    counterpoint_sales.line_type = ticket['line_type']
-    # counterpoint_sales.mode_of_payment = ticket['mode_of_payment']
-    counterpoint_sales.posting_date = ticket['posting_date']
-    counterpoint_sales.ticket_date = ticket['ticket_date']
-    counterpoint_sales.ticket_type = ticket['ticket_type']
-    counterpoint_sales.ticket_location = ticket['ticket_location']
-    counterpoint_sales.total_quantity = ticket['total_quantity']
+		if any(item['qty'] > 0 for item in ticket['items']) and not frappe.db.exists('CounterPoint Sales', {'ticket_number': ticket['ticket_number']}):
+			counterpoint_sales.insert()
+			create_sales_invoice_from_ticket(counterpoint_sales)
 
-    for item in ticket['items']:
-      if item['qty'] < 0:
-        counterpoint_return.append('items', {
-            'item': item['item_code'],
-            'item_name': item['item_name'],
-            'qty': item['qty'],
-            'cost': item['exact_cost'],
-            'price': item['price'],     
-        })
-      else:
-        counterpoint_sales.append('items', {
-            'item': item['item_code'],
-            'item_name': item['item_name'],
-            'qty': item['qty'],
-            'cost': item['exact_cost'],
-            'price': item['price'],     
-        })
+	else:
+		if frappe.db.exists('CounterPoint Sales', {'ticket_number': ticket['ticket_number']}):
+			counterpoint_sales = frappe.get_doc('CounterPoint Sales', {'ticket_number': ticket['ticket_number']})
+			create_sales_invoice_from_ticket(counterpoint_sales)
+			return
 
-    counterpoint_return.insert()
+		counterpoint_sales = frappe.new_doc('CounterPoint Sales')
+		counterpoint_sales.update({
+			'ticket_location': ticket['ticket_location'],
+			'total_quantity': ticket['total_quantity'],
+			'ticket_number': ticket['ticket_number'],
+			'customer_name': ticket['customer_name'],
+			'customer': ticket['customer_number'],
+			'ticket_date': ticket['ticket_date'],
+			'ticket_type': ticket['ticket_type'],
+			'posting_date': ticket['post_date'],
+			'line_type': ticket['line_type']
+		})
 
-    if any(item['qty'] > 0 for item in ticket['items']):
-       counterpoint_sales.insert()
-    
-    return {'message': f'Sales Return has been succesfully created.'}
-  else:
+		for item in ticket['items']:
+			counterpoint_sales.append('items', {
+				'item': item['item_code'],
+				'item_name': item['item_name'],
+				'qty': item['qty'],
+				'cost': item['exact_cost'],
+				'price': item['price'],     
+			})
 
-    ticket_exists = frappe.db.exists('CounterPoint Sales', {'ticket_number': ticket['ticket_number']})
-
-    if ticket_exists:
-      return {'message': f'Sales Ticket already created.'}
-        
-    counterpoint_sales = frappe.new_doc('CounterPoint Sales')
-    counterpoint_sales.ticket_number = ticket['ticket_number']
-    counterpoint_sales.customer = ticket['customer_number']
-    counterpoint_sales.customer_name = ticket['customer_name']
-    counterpoint_sales.line_type = ticket['line_type']
-    # counterpoint_sales.mode_of_payment = ticket['mode_of_payment']
-    counterpoint_sales.posting_date = ticket['posting_date']
-    counterpoint_sales.ticket_date = ticket['ticket_date']
-    counterpoint_sales.ticket_type = ticket['ticket_type']
-    counterpoint_sales.ticket_location = ticket['ticket_location']
-    counterpoint_sales.total_quantity = ticket['total_quantity']
-
-    for item in ticket['items']:
-      counterpoint_sales.append('items', {
-          'item': item['item_code'],
-          'item_name': item['item_name'],
-          'qty': item['qty'],
-          'cost': item['exact_cost'],
-          'price': item['price'],     
-      })
-
-    counterpoint_sales.insert()
-  
-    return {'message': f'Sales Ticket has been succesfully created.'}
+		counterpoint_sales.insert()
+		create_sales_invoice_from_ticket(counterpoint_sales)
+		
 
 def create_material_receipt_from_return():
   fields = ['customer', 'customer_name', 'ticket_number', 'ticket_location']
@@ -1911,178 +2018,118 @@ def create_stock_entry_from_return():
 
 from datetime import time
 
-@frappe.whitelist()
-def create_sales_invoice_from_ticket():
-    print('Starting process to create sales invoices from tickets.')
-    skipped = 0
-    fields = ['customer', 'customer_name', 'ticket_number', 'ticket_location']
-    tickets = frappe.db.get_all('CounterPoint Sales', 
-        filters={'sales_invoice_created': 0, 'ticket_error': 0},
-        fields=['*'],
-        order_by = 'ticket_number'
-    )
-    print(f'Retrieved {len(tickets)} tickets for processing.')
+def create_sales_invoice_from_ticket(ticket):
+	fields = ['customer', 'customer_name', 'ticket_number', 'ticket_location']
+	skip = False
+	temp = ''
+	current_ticket = frappe.get_doc('CounterPoint Sales', ticket.name)
 
-    for ticket in tickets:
-        print(f'\nProcessing ticket: {ticket.name}')
-        skip = False
-        temp = ''
-        current_ticket = frappe.get_doc('CounterPoint Sales', ticket.name)
+	for item in current_ticket.items:
+		if not item:
+			temp += f'->Missing item data for {item}\n'
+			skip = True
 
-        for item in current_ticket.items:
-            print(f'Checking item: {item.item} in ticket {current_ticket.name}')
+		if item.qty <= 0:
+			temp += f'-> Item {item.item} has invalid quantity: {item.qty}\n'
+			skip = True
 
-            if not item:
-                skip = True
-                temp += f'->Missing item data for {item}\n'
+		if not frappe.db.exists('Item', item.item):
+			temp += f'-> Item {item.item} does not exist in the system.\n'
+			try:
+				temp += f'-> Attempting to upload Item {item.item}.\n'
+				upload_item(item.item)
+				item_doc = frappe.get_doc('Item', item.item)
+				is_whole_num = frappe.db.get_value('UOM', {'name': item_doc.stock_uom}, ['must_be_whole_number'])
 
-            if item.qty <= 0:
-                print(f'Invalid quantity for item {item.item}: {item.qty}')
-                temp += f'-> Item {item.item} has invalid quantity: {item.qty}\n'
-                skip = True
+				if is_whole_num == 1 and not item.qty.is_integer():
+					temp += f'-> Fractional quantity {item.qty} not allowed for item {item.item}.\n'
+					skip = True
 
-            if not frappe.db.exists('Item', item.item):
-                print(f'Item {item.item} does not exist in the system.')
-                temp += f'-> Item {item.item} does not exist in the system.\n'
-                # try:
-                #     print(f'Attempting to upload Item {item.item}.')
-                #     temp += f'-> Attempting to upload Item {item.item}.\n'
-                #     upload_item(item.item)
+			except Exception as e:
+				temp += f'-> Something went wrong when uploading {item.item}.\n'
+				skip = True
+				continue
 
-                # except Exception as e:
-                #     print(f'Something went wrong when uploading Item {item.item}.')
-                #     temp += f'-> Something went wrong when uploading {item.item}.\n'
-                skip = True
-                #     continue
+		else:
+			item_doc = frappe.get_doc('Item', item.item)
+			is_whole_num = frappe.db.get_value('UOM', {'name': item_doc.stock_uom}, ['must_be_whole_number'])
 
-            else:
-                item_doc = frappe.get_doc('Item', item.item)
-                is_whole_num = frappe.db.get_value('UOM', {'name': item_doc.stock_uom}, ['must_be_whole_number'])
+			if is_whole_num == 1 and not item.qty.is_integer():
+				temp += f'-> Fractional quantity {item.qty} not allowed for item {item.item}.\n'
+				skip = True
 
-                if is_whole_num == 1 and not item.qty.is_integer():
-                    print(f'Item {item.item} has fractional quantity: {item.qty}, but its UOM requires whole numbers.')
-                    temp += f'-> Fractional quantity {item.qty} not allowed for item {item.item}.\n'
-                    skip = True
+	for key in fields:
+		if not current_ticket.get(key):
+			temp += f'-> Missing value for {key}.\n'
+			skip = True
 
-        for key in fields:
-            print(f'Checking field {key} for ticket {current_ticket.name}: {current_ticket.get(key)}')
-           
-            if not current_ticket.get(key):
-                skip = True
-                print(f'Missing value for {key}.\n')
-                temp += f'-> Missing value for {key}.\n'
+	if skip:
+		frappe.log_error(title="create_sales_invoice_from_ticket", message=temp)
+		current_ticket.ticket_error = 1
+		current_ticket.save() 
+	
+	sales_inv_exists = frappe.db.exists('Sales Invoice', {'custom_ticket': ticket.get('ticket_number')})
 
-        if skip:
-            print(f'Skipping ticket {current_ticket.name} due to errors:\n{temp}')
-            create_ticket_log(current_ticket.name, temp)
-            current_ticket.ticket_error = 1
-            current_ticket.save() 
-            skipped += 1
-            continue
-        
-        print(f'All validations passed for ticket {current_ticket.name}. Proceeding to create sales invoice.')
-        sales_inv_exists = frappe.db.exists('Sales Invoice', {'custom_ticket': ticket.get('ticket_number')})
+	if sales_inv_exists:
+		current_ticket.sales_invoice_created = 1
+		current_ticket.save()
+		si = frappe.get_doc('Sales Invoice', {'custom_ticket': ticket.get('ticket_number')})
 
-        if sales_inv_exists:
-            print(f'Sales Invoice already created for ticket {current_ticket.name}. Continuing...')
-            skipped += 1
-            current_ticket.sales_invoice_created = 1
-            current_ticket.save()
+	else:
+		formatted_posting_date = current_ticket.posting_date.split()[0]
+		ticket_customer_id = current_ticket.customer
+		ticket_customer_name = current_ticket.customer_name
+		cus_in_sys = frappe.db.exists('Customer', ticket_customer_id)
+		sales_invoice_customer = ''
+		
+		if not cus_in_sys:
+			new_cus = frappe.new_doc('Customer')
+			new_cus.update({
+				'customer_name': ticket_customer_id,
+				'customer_details': ticket_customer_name,
+				'customer_type': 'Individual',
+				'territory': 'All Territories'
+			})
+			new_cus.insert()
+			sales_invoice_customer = new_cus.name
 
-        else:
-            posting_date = current_ticket.posting_date 
-            converted_posting_date = datetime.datetime.strptime(posting_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-            formatted_posting_date = converted_posting_date.strftime('%Y-%m-%d')
-            ticket_customer_id = current_ticket.customer
-            ticket_customer_name = current_ticket.customer_name
-            cus_in_sys = frappe.db.exists('Customer', ticket_customer_id)
-            sales_invoice_customer = ''
-            
-            if not cus_in_sys:
-                print(f'Customer {ticket_customer_id} does not exist. Creating new customer.')
-                new_cus = frappe.new_doc('Customer')
-                new_cus.update({
-                    'customer_name': ticket_customer_id,
-                    'customer_details': ticket_customer_name,
-                    'customer_type': 'Individual',
-                    'territory': 'All Territories'
-                })
-                new_cus.insert()
-                sales_invoice_customer = new_cus.name
+		else:
+			sales_invoice_customer = frappe.db.get_value('Customer', ticket_customer_id, 'name')
 
-            else:
-                print(f'Customer {ticket_customer_id} exists.')
-                sales_invoice_customer = frappe.db.get_value('Customer', ticket_customer_id, 'name')
+		warehouse = frappe.db.get_value('Store Location Mapping Table', {'store_location': current_ticket.ticket_location}, ['warehouse'])
 
-            warehouse = frappe.db.get_value('Store Location Mapping Table', {'store_location': current_ticket.ticket_location}, ['warehouse'])
-            print(f'Creating Sales Invoice for ticket {current_ticket.name}.')
-            si = frappe.new_doc('Sales Invoice')
-            si.set_posting_time = 1
-            si.posting_date = formatted_posting_date
-            si.posting_time = time(23, 59)
-            si.company = 'Jollys Pharmacy Limited'
-            si.customer = sales_invoice_customer
-            si.debit_to = '1310 - Debtors - JP',
-            si.update_stock = 1
-            si.is_pos = 0
-            si.is_return = 0
-            si.return_against = None
-            si.currency = 'XCD'
-            si.conversion_rate = 1
-            si.naming_series = 'ACC-SINV-.YYYY.-'
-            si.cost_center = 'Main - JP',
-            si.custom_ticket = current_ticket.ticket_number
-            si.due_date = datetime.datetime.now() + datetime.timedelta(1)
-            si.set_warehouse = warehouse
-            si.income_account = '4110 - Sales - JP',
-            si.expense_account = '5111 - Cost of Goods Sold - JP',
-            
-            for item in current_ticket.items:
-                print(f'Adding item {item.item} to Sales Invoice.')
-                si.append('items', {
-                    'item_code': item.item,
-                    'item_name': frappe.db.get_value('Item', item.item, 'item_name'),
-                    'description': frappe.db.get_value('Item', item.item, 'description'),
-                    'warehouse': warehouse,
-                    'target_warehouse': None,
-                    'qty': float(item.qty),
-                    'uom': frappe.db.get_value('Item', item.item, 'stock_uom'),
-                    'stock_uom': frappe.db.get_value('Item', item.item, 'stock_uom'),
-                    'rate': float(item.price),
-                    'price_list_rate': float(item.price),
-                    'income_account': '4110 - Sales - JP',
-                    'expense_account': '5111 - Cost of Goods Sold - JP',
-                    'discount_account': '6800 - Discount Expense - JP',
-                    'discount_amount': 0,
-                    'asset': None,
-                    'cost_center': 'Main - JP',
-                    'conversion_factor': 1,
-                    'incoming_rate': 0,
-                    'serial_and_batch_bundle': None,
-                })
+		si = frappe.new_doc('Sales Invoice')
+		si.update({
+			'set_posting_time': 1,
+			'posting_date': formatted_posting_date,
+			'posting_time': time(23, 59),
+			'customer': sales_invoice_customer,
+			'update_stock': 1,
+			'custom_ticket': current_ticket.ticket_number,
+			'due_date': datetime.datetime.now() + datetime.timedelta(1),
+			'set_warehouse': warehouse
+		})
+		
+		for item in current_ticket.items:
+			si.append('items', {
+				'item_code': item.item,
+				'warehouse': warehouse,
+				'qty': float(item.qty),
+				'uom': frappe.db.get_value('Item', item.item, 'stock_uom'),
+				'rate': float(item.price),
+				'price_list_rate': float(item.price),
+			})
 
-            try:
-                si.insert()
-                current_ticket.sales_invoice_created = 1
-                current_ticket.save() 
-                print(f'Sales Invoice {si.name} created successfully.')
+		try:
+			si.insert()
+			current_ticket.sales_invoice_created = 1
+			current_ticket.save() 
 
-            except Exception as e:
-                print(f'Error creating Sales Invoice for ticket {current_ticket.name}: {str(e)}')
-                create_sales_log(si, f'Error creating Sales Invoice: {str(e)}')
-                continue
-            
-    print('Finished processing tickets.')
-    print(f'Skipped {skipped} / {len(tickets)}')
+		except Exception as e:
+			frappe.log_error(title="create_sales_invoice_from_ticket", message=frappe.get_traceback())
+			return
 
-    try:
-        # schedule_check_and_inflate_stock_for_sales_invoices()
-        schedule_check_and_submit_invoice()
-
-    except Exception as e:
-        frappe.log_error(message=e, title='Error when scheduling schedule_check_and_submit_invoice()')
-    
-    return 'Sales Invoices Created'
+	check_and_submit_invoice(si)        
 
 # def check_and_inflate_stock_for_sales_invoices(posting_date):
 #     print("Starting process to check and inflate stock.")
@@ -2189,82 +2236,34 @@ def create_sales_invoice_from_ticket():
 
 #     return 'Created and Submitted Material Receipt'
 
-def check_and_submit_invoice():
-    print("Starting process to check and submit invoices.")
-    sales_list = frappe.db.get_all("Sales Invoice", 
-        filters={'docstatus': 0, 'custom_ticket': ['!=', None]},
-        fields=['*'],
-    )
-    print(f"Number of Sales Invoices to process: {len(sales_list)}")
-
-    for sales_inv in sales_list:
-        print(f"\nProcessing Sales Invoice: {sales_inv.name}")
-        ticket_exists = frappe.db.exists('CounterPoint Sales', f'TK-{sales_inv.custom_ticket}')
-
-        if ticket_exists:
-            print(f"Ticket TK-{sales_inv.custom_ticket} exists for Sales Invoice {sales_inv.name}.")
-            frappe.db.savepoint('sp')
-            ticket_doc = frappe.get_doc('CounterPoint Sales', f'TK-{sales_inv.custom_ticket}')
-            print(f"Ticket {ticket_doc.name} details: Total Quantity = {ticket_doc.total_quantity}")
-
-            if ticket_doc.total_quantity > 0:
-                s_inv= frappe.get_doc("Sales Invoice",sales_inv.name)
-
-                if s_inv.docstatus == 0:
-                    try:
-                        print(f"Attempting to submit Sales Invoice {s_inv.name}.")
-                        s_inv.submit()
-                        frappe.db.commit()
-                        print(f"Successfully submitted Sales Invoice {s_inv.name}.")
-
-                    except frappe.exceptions.ValidationError as e:
-                        frappe.db.rollback()
-                        print(f"Unexpected error while submitting Sales Invoice {s_inv.name}: {str(e)}. Rolling back changes.")
-                        create_sales_log(s_inv,f"Sales Invoice submit error: {str(e)}")
-                        continue
-
-                    except Exception as e:
-                        frappe.db.rollback()
-                        print(f"Unexpected error while submitting Sales Invoice {s_inv.name}: {str(e)}. Rolling back changes.")
-                        create_sales_log(s_inv,f"Sales Invoice submit error: {str(e)}")
-                        continue
-                    
-                else:
-                    print(f"Skipping submission of Sales Invoice {s_inv.name}: Invalid docstatus {s_inv.docstatus}.")
-                    create_sales_log(s_inv,f"Skipped submission of Sales Invoice {s_inv.name}: Invalid docstatus {s_inv.docstatus}.")
-                    continue
-
-            else:
-                print(f"Skipping Sales Invoice {sales_inv.name}: Ticket {ticket_doc.name} has zero total quantity.")
-                create_sales_log(s_inv,f"Skipped Sales Invoice {sales_inv.name}: Ticket {ticket_doc.name} has zero total quantity.")
-                
-        else:
-            print(f"Ticket TK-{sales_inv.custom_ticket} does not exist. Skipping Sales Invoice {sales_inv.name}.")
-            create_sales_log(s_inv,f"Ticket TK-{sales_inv.custom_ticket} does not exist. Skipped Sales Invoice {sales_inv.name}.")
-            continue
-
-    print("Finished processing Sales Invoices.")
-
-def schedule_create_sales_invoice_from_ticket():
-    frappe.enqueue(
-    create_sales_invoice_from_ticket, # python function or a module path as string
-    queue="default", # one of short, default, long
-    timeout=86400, # pass timeout manually
-    is_async=True, # if this is True, method is run in worker
-    now=False, # if this is True, method is run directly (not in a worker) 
-    job_name="Create Sales Invoices From Counterpoint Sales", # specify a job name
-    )
-
-def schedule_check_and_submit_invoice():
-    frappe.enqueue(
-    check_and_submit_invoice, # python function or a module path as string
-    queue="default", # one of short, default, long
-    timeout=86400, # pass timeout manually
-    is_async=True, # if this is True, method is run in worker
-    now=False, # if this is True, method is run directly (not in a worker) 
-    job_name="Validate & Submit Generated Sales Invoices", # specify a job name
-    )
-
+def check_and_submit_invoice(si):
+	ticket_exists = frappe.db.exists('CounterPoint Sales', f'TK-{si.custom_ticket}')
+	if ticket_exists:
+		frappe.db.savepoint('sp')
+		ticket_doc = frappe.get_doc('CounterPoint Sales', f'TK-{si.custom_ticket}')
+		if ticket_doc.total_quantity > 0:
+			s_inv= frappe.get_doc("Sales Invoice",si.name)
+			if s_inv.docstatus == 0:
+				try:
+					s_inv.submit()
+					frappe.db.commit()
+				except frappe.exceptions.ValidationError as e:
+					frappe.db.rollback()
+					customer = frappe.get_doc('Customer', s_inv.customer)
+					customer.credit_limit = []
+					customer.save()
+					try:
+						s_inv.submit()
+						frappe.db.commit()
+					except Exception as e:
+						frappe.db.rollback()
+						frappe.log_error(title="check_and_submit_invoice", message=frappe.get_traceback())
+						return
+				except Exception as e:
+					frappe.db.rollback()
+					frappe.log_error(title="check_and_submit_invoice", message=frappe.get_traceback())
+					return
+				
 # def schedule_check_and_inflate_stock_for_sales_invoices():
 #     frappe.enqueue(
 #     check_and_inflate_stock_for_sales_invoices, # python function or a module path as string
@@ -2505,3 +2504,440 @@ def update_ordered_percentage(material_request):
         'status': 'error',
         'message': f'Material Request is already transferred.'
     }
+
+
+@frappe.whitelist()
+def query_counterpoint_tickets():
+     # Specifying the ODBC driver, server name, database, etc. directly
+    conn = pymssql.connect(
+    server='10.0.10.5',
+    user='SA',
+    password='Counterpoint1',
+    database='Jollyspharm',
+    as_dict=True )
+
+    # Create a cursor from the connection   
+    cursor = conn.cursor()
+    # Specify date range and type of ticket
+    date_start = '2025-04-06'
+    date_end = '2025-04-06'    
+    ticket_type ='A'
+    #print('SELECT TKT_NO AS ticket_number FROM PS_TKT_HIST WHERE TKT_TYP <> %s AND BUS_DAT BETWEEN %s AND %s',(ticket_type, date_start, date_end))
+    cursor.execute('SELECT TKT_NO AS ticket_number FROM PS_TKT_HIST WHERE TKT_TYP <> %s AND BUS_DAT BETWEEN %s AND %s',(ticket_type, date_start, date_end))
+    records = cursor.fetchall()
+
+    #retrieve list of tickets to compare against counterpoint list       
+    date_start_p =  date_end + 'T00:00:00.000Z'
+    date_end_p = date_start + 'T23:59:59.000Z'
+    #print(date_end_p)
+    #print(date_start)
+    
+    #to query live after moving to it
+    #sqlTicket = frappe.db.sql(f"""
+    #    SELECT ticket_number
+    #    FROM `tabCounterPoint Sales`
+    #    WHERE ticket_date BETWEEN '{date_start_p}' AND '{date_end_p}'
+    #    """,as_dict=True)
+        
+    #jrps = sqlTicket
+    #jrp2= frappe.db.get_all('CounterPoint Sales', {'ticket_date':["between",[date_start_p,date_end_p]]},["ticket_number"])
+    #print(jrp2)
+   
+    # jrps= json.loads(requests.get('http://10.0.10.155/api/method/count_tickets',params={'date_start': date_start_p, 'date_end': date_end_p}).text)
+    jrps = frappe.db.sql(f"""
+        SELECT ticket_number
+        FROM `tabCounterPoint Sales`
+        WHERE ticket_date LIKE '2025-04-06%'
+        
+        """,
+    as_dict=True
+    )
+    # jrps = jrps['message']
+    difference = len(records) - len(jrps)
+    
+    print(date_start,': ', len(records),' - ', len(jrps),' = ', difference)
+    if jrps and records:
+        non_matching_values = [item for item in jrps if item not in records] + [item for item in records if item not in jrps]
+
+        if non_matching_values:
+            non_matching_tickets = [ticket['ticket_number'] for ticket in non_matching_values]
+            #print(non_matching_tickets)
+            #item_list(non_matching_tickets)
+        else:
+            print("No ticket mismatches")
+    else:
+        print("No tickets to compare")
+
+    conn.close()
+    counter = 0
+    jrp_list = []
+    
+@frappe.whitelist()    
+def item_list(ticket_numbers):
+    print('1')
+    conn = pymssql.connect(
+    server='10.0.10.5',
+    user='SA',
+    password='Counterpoint1',
+    database='Jollyspharm',
+    as_dict=True )
+    cursor = conn.cursor()
+    format_tickets = ', '.join(['%s'] * len(ticket_numbers))
+    #print(ticket_numbers)
+    query = f"""
+    SELECT
+        VI_PS_TKT_HIST_LIN.QTY_SOLD,
+        VI_PS_TKT_HIST.CUST_NO,
+        VI_PS_TKT_HIST_LIN.ITEM_NO,
+        VI_PS_TKT_HIST_LIN.TKT_NO,
+        VI_PS_TKT_HIST_LIN.EXT_PRC,
+        VI_PS_TKT_HIST_LIN.EXT_COST,
+        IM_ITEM.QTY_DECS,
+        AR_CUST.NAM,
+        VI_PS_TKT_HIST_LIN.DESCR,
+        VI_PS_TKT_HIST.TKT_TYP,
+        VI_PS_TKT_HIST_LIN.POST_DAT,
+        VI_PS_TKT_HIST.TKT_DAT,
+        VI_PS_TKT_HIST_LIN.LIN_TYP,
+        VI_PS_TKT_HIST_LIN.STK_LOC_ID,
+        VI_PS_TKT_HIST.STK_LOC_ID,
+        VI_PS_TKT_HIST_LIN.QTY_NUMER,
+        VI_PS_TKT_HIST_LIN.QTY_DENOM
+    FROM
+    ((Jollyspharm.dbo.VI_PS_TKT_HIST VI_PS_TKT_HIST
+    LEFT OUTER JOIN
+    Jollyspharm.dbo.AR_CUST AR_CUST
+    ON
+    VI_PS_TKT_HIST.CUST_NO=AR_CUST.CUST_NO) 
+    INNER JOIN
+    Jollyspharm.dbo.VI_PS_TKT_HIST_LIN VI_PS_TKT_HIST_LIN
+    ON
+    (VI_PS_TKT_HIST.BUS_DAT=VI_PS_TKT_HIST_LIN.BUS_DAT) AND (VI_PS_TKT_HIST.DOC_ID=VI_PS_TKT_HIST_LIN.DOC_ID))
+    LEFT OUTER JOIN
+    Jollyspharm.dbo.IM_ITEM IM_ITEM
+    ON
+    VI_PS_TKT_HIST_LIN.ITEM_NO=IM_ITEM.ITEM_NO
+    WHERE VI_PS_TKT_HIST.TKT_NO IN ({format_tickets})
+    """
+    
+    cursor.execute(query,ticket_numbers)
+    results = cursor.fetchall()
+    #print(results)
+    #print(len(results))
+    ticket_data = {}
+    
+    for item in results:
+        #print(item)
+        if item['TKT_NO'] not in ticket_data:
+            
+            ticket_data[item['TKT_NO'] ] = {
+            "items": [
+            {
+            "item_code": item['ITEM_NO'],
+            "item_name": item['DESCR'],
+            "qty": item['QTY_SOLD'],
+            "price": item['EXT_PRC'],
+            "exact_cost": item['EXT_COST'],
+            "description": item['DESCR'],
+            },
+            ], 
+            "customer_number": item['CUST_NO'],
+            "customer_name": item['NAM'],
+            "ticket_number": item['TKT_NO'],
+            "ticket_type": item['TKT_TYP'],
+            "post_date": item['POST_DAT'],
+            "ticket_date": item['TKT_DAT'],
+            "ticket_location": item['STK_LOC_ID'],
+            "line_type": item['LIN_TYP'],
+            "total_quantity": item['QTY_SOLD'],
+            }
+        else: 
+            item_data = {
+            "item_code": item['ITEM_NO'],
+            "item_name": item['DESCR'],
+            "qty": item['QTY_SOLD'],
+            "price": item['EXT_PRC'],
+            "exact_cost": item['EXT_COST'],
+            "description": item['DESCR'],
+            }
+            ticket_data[item['TKT_NO']]["total_quantity"] += item['QTY_SOLD']
+            ticket_data[item['TKT_NO']]["items"].append(item_data)
+            
+        tickets = [{**v} for k, v in ticket_data.items()]
+        tickets = ticket_data.items()        
+        create_missing_counterpoint_sales_ticket(ticket_data)
+         
+    
+    conn.close()
+    #print(tickets)    
+    #print(results)
+
+
+
+@frappe.whitelist()
+def create_missing_counterpoint_sales_ticket(ticket):
+  #print('2')
+  #print(ticket)
+  #ticket = json.loads(ticket)
+  for key in ticket:
+    tkt_no = key
+  returned_items = []
+
+  if not ticket:
+    frappe.log_error(message='Failed to receive data for ticket creation.', title='Data Not Found')
+    raise('Failed to receive data for ticket creation.')
+
+  ticket_exists = frappe.db.exists('CounterPoint Sales', {'ticket_number':tkt_no})
+
+  if ticket_exists:
+    return {'message': f'Sales Ticket already created.'}
+  
+  counterpoint_sales = frappe.new_doc('CounterPoint Sales')
+  counterpoint_sales.ticket_number = tkt_no
+  counterpoint_sales.customer = ticket[tkt_no]['customer_number']
+  counterpoint_sales.customer_name = ticket[tkt_no]['customer_name']
+  counterpoint_sales.line_type = ticket[tkt_no]['line_type']
+  # counterpoint_sales.mode_of_payment = ticket['mode_of_payment']
+  counterpoint_sales.posting_date = ticket[tkt_no]['post_date']
+  counterpoint_sales.ticket_date = ticket[tkt_no]['ticket_date']
+  counterpoint_sales.ticket_type = ticket[tkt_no]['ticket_type']
+  counterpoint_sales.ticket_location = ticket[tkt_no]['ticket_location']
+  counterpoint_sales.total_quantity = ticket[tkt_no]['total_quantity']
+  counterpoint_sales.ticket_missing = '1'
+  
+  for item in ticket[tkt_no]['items']:
+    if item['qty'] < 0: 
+        counterpoint_sales.is_return = 1
+
+        returned_items.append( {
+            'item': item['item_code'],
+            'item_name': item['item_name'],
+            'qty': item['qty'],
+            'cost': item['exact_cost'],
+            'price': item['price'],     
+        })
+
+        continue
+
+    counterpoint_sales.append('items', {
+        'item': item['item_code'],
+        'item_name': item['item_name'],
+        'qty': item['qty'],
+        'cost': item['exact_cost'],
+        'price': item['price'],     
+    })
+  counterpoint_sales.insert()
+  print(counterpoint_sales.name)
+
+  if len(returned_items) > 0:
+      counterpoint_return = frappe.new_doc('CounterPoint Returns')
+      counterpoint_return.ticket = counterpoint_sales.get('name')
+      counterpoint_return.customer = ticket[tkt_no]['customer_number']
+      counterpoint_return.customer_name = ticket[tkt_no]['customer_name']
+      counterpoint_return.posting_date = ticket[tkt_no]['post_date']
+      counterpoint_return.ticket_date = ticket[tkt_no]['ticket_date']
+      counterpoint_return.ticket_location = ticket[tkt_no]['ticket_location']
+
+      for item in returned_items:
+          
+          counterpoint_return.append('items', {
+              'item': item['item'],
+              'item_name': item['item_name'],
+              'qty': item['qty'],
+              'cost': item['cost'],
+              'price': item['price'],     
+          })
+      counterpoint_return.insert()
+      print(counterpoint_return)
+  return {'message': f'Sales Ticket has been succesfully created.'} 
+
+def schedule_submit_pharmacy_scanned_items():
+    frappe.enqueue(
+    submit_pharmacy_scanned_items, # python function or a module path as string
+    queue="default", # one of short, default, long
+    timeout=86400, # pass timeout manually
+    is_async=True, # if this is True, method is run in worker
+    now=False, # if this is True, method is run directly (not in a worker) 
+    job_name="Submit Material Issues From Pharmacies", # specify a job name
+    )
+
+def submit_pharmacy_scanned_items():
+    material_issues = frappe.get_all('Stock Entry', {
+        'stock_entry_type': 'Material Issue',
+        'custom_pharmacy_scan': 1,
+    }, ['name'])
+    for material_issue in material_issues:
+        material_issue_doc = frappe.get_doc('Material Issue', material_issue.name)
+        try:
+            material_issue_doc.submit()
+        except Exception as e:
+            frappe.log_error(frappe.get_traceback(), "Error in submit_pharmacy_scanned_items")
+            continue
+
+@frappe.whitelist(allow_guest=True)
+def fetch_pharmacy_scanned_items(location:str) -> list:
+    if location == '':
+        frappe.msgprint('Please Select a Location')
+        return
+
+    if not frappe.db.exists('Stock Entry', {
+        'stock_entry_type': 'Material Issue',
+        'custom_pharmacy_scan': 1,
+        'from_warehouse': location,
+        'posting_date': frappe.utils.nowdate()
+    }):
+        return []
+        
+    material_issue = frappe.get_doc('Stock Entry',{
+        'stock_entry_type': 'Material Issue',
+        'custom_pharmacy_scan': 1,
+        'from_warehouse': location,
+        'posting_date': frappe.utils.nowdate()
+    })
+
+    return material_issue.items
+    
+@frappe.whitelist(allow_guest=True)
+def pharmacy_scanner(barcode:str, location:str) -> dict:
+    if location == '':
+        frappe.msgprint('Please Select a Location')
+        return
+
+    if barcode == '':
+        frappe.msgprint('Please Enter a Barcode')
+        return
+
+    if not frappe.db.exists('Item Barcode', {'barcode': barcode}):   
+        frappe.msgprint(f"Barcode '{barcode}' is not associated with any item")
+        return
+
+    item_code = frappe.db.get_value('Item Barcode', {'barcode': barcode}, 'parent')
+    item_name = frappe.db.get_value('Item', item_code, 'item_name')
+    html_msg = (
+        '<div class="alert alert-success">'
+        '+1 Scanned:<br><br>'
+        f'{item_code}<br>'
+        f'{item_name}'
+        '</div>'
+    )
+    out = frappe._dict({'msg': html_msg})
+
+    if not frappe.db.exists('Stock Entry', {
+        'stock_entry_type': 'Material Issue',
+        'custom_pharmacy_scan': 1,
+        'from_warehouse': location,
+        'posting_date': frappe.utils.nowdate()
+    }):
+        material_issue = frappe.new_doc('Stock Entry')
+        material_issue.update({
+            'stock_entry_type': 'Material Issue',
+            'custom_pharmacy_scan': 1,
+            'from_warehouse': location
+        })
+        material_issue.append('items', {
+            'item_code': item_code,
+            'qty': 1
+        })
+        try:
+            material_issue.insert(ignore_permissions=True)
+            material_issue.add_comment('Info', f'Auto Generated Stock Entry to Issue Pharmacy Stock Scanned at {location} - {frappe.utils.nowdate()}')
+            frappe.db.commit()
+            
+        except Exception as e:
+            frappe.db.rollback()
+            frappe.log_error(frappe.get_traceback(), "Error in pharmacy_scanner")
+            
+        return out
+    
+    material_issue = frappe.get_doc('Stock Entry',{
+        'stock_entry_type': 'Material Issue',
+        'custom_pharmacy_scan': 1,
+        'from_warehouse': location,
+        'posting_date': frappe.utils.nowdate()
+    })
+
+    existing_item = next((item for item in material_issue.items if item.item_code == item_code), None)
+
+    if existing_item:
+        existing_item.qty += 1    
+
+    else:
+        material_issue.append('items', {
+            'item_code': item_code,
+            'qty': 1
+        })
+
+    frappe.db.savepoint('sp')
+
+    try:
+        material_issue.save(ignore_permissions=True)
+        frappe.db.commit()
+
+    except Exception as e:
+        frappe.db.rollback()
+        frappe.log_error(frappe.get_traceback(), "Error in pharmacy_scanner")
+
+    return out
+
+# import pandas as pd
+# from sklearn.model_selection import train_test_split
+# from sklearn.feature_extraction.text import TfidfVectorizer
+# from sklearn.naive_bayes import MultinomialNB
+# from sklearn.pipeline import make_pipeline
+# from sklearn.metrics import classification_report
+# import re
+# import html
+
+# def sanitize_input(description, brands):
+#     # Decode HTML entities
+#     cleaned = html.unescape(description)
+#     # Remove brand names from beginning
+#     words = cleaned.split()
+#     if words and words[0].upper() in brands:
+#         cleaned = ' '.join(words[1:])
+#     # Remove special characters except spaces
+#     cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', cleaned)
+#     # Normalize whitespace and casing
+#     cleaned = ' '.join(cleaned.lower().strip().split())
+#     return cleaned
+
+# def testing_ai():
+# 	items = frappe.db.get_list('Item', 
+# 		filters = {
+# 			'description': ['is', 'set'], 
+# 			'customs_tariff_number': ['is', 'set']
+# 		},
+# 		fields = ['description', 'customs_tariff_number']
+# 	)
+
+# 	df = pd.DataFrame([{
+# 			"Description": item.description,
+# 			"Customs Tariff Number": item.customs_tariff_number
+# 		} for item in items]
+# 	)
+
+# 	brands = {item.description.split()[0].upper() for item in items}
+
+# 	# Clean training data
+# 	df['Cleaned Description'] = df['Description'].apply(
+# 		lambda x: sanitize_input(x, brands))
+
+# 	X = df['Cleaned Description']
+# 	y = df['Customs Tariff Number']
+
+# 	# Train/test split and model setup
+# 	X_train, X_test, y_train, y_test = train_test_split(
+# 		X, y, test_size=0.2, random_state=42)
+
+# 	model = make_pipeline(TfidfVectorizer(), MultinomialNB())
+# 	model.fit(X_train, y_train)
+
+# 	# Evaluation
+# 	y_pred = model.predict(X_test)
+# 	print(classification_report(y_test, y_pred))
+
+# 	# Example prediction with sanitization
+# 	example = ['PREDNISOLONE SODIUM 15MG/5ML 237ML']
+# 	clean_example = [sanitize_input(example[0], brands)]
+# 	print(example[0])
+# 	print('Predicted:', model.predict(clean_example)[0])

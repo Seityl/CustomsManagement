@@ -27,6 +27,7 @@
    "in_list_view": 1,
    "label": "Item",
    "options": "Item",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -50,14 +51,12 @@
    "columns": 1,
    "fieldname": "qty",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Qty"
   },
   {
    "columns": 1,
    "fieldname": "rate",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Rate",
    "options": "currency"
   },
@@ -65,7 +64,6 @@
    "columns": 2,
    "fieldname": "amount",
    "fieldtype": "Currency",
-   "in_list_view": 1,
    "label": "Amount",
    "options": "currency"
   },
@@ -77,7 +75,6 @@
    "default": "0",
    "fieldname": "duty_exempt",
    "fieldtype": "Check",
-   "in_list_view": 1,
    "label": "Duty Exempt",
    "read_only": 1
   },
@@ -109,7 +106,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-02-25 13:54:31.888241",
+ "modified": "2025-03-20 12:19:43.790415",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Invoice Verification Item",

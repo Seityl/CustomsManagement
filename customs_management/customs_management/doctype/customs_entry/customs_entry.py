@@ -1,5 +1,5 @@
-# Copyright (c) 2023, Sudeep Kulkarni and contributors
-# For license information, please see license.txt
+#  Copyright (c) 2025, Jollys Pharmacy Ltd. and contributors
+#  For license information, please see license.txt
 
 import json
 import re
@@ -1177,7 +1177,7 @@ def build_valuation(doc, settings):
 	gs_external = ET.SubElement(valuation, 'Gs_external_freight')
 
 	ext_amount1 = ET.SubElement(gs_external, 'Amount_foreign_currency')
-	ext_amount1.text = f'{doc.get_freight():.0f}'
+	ext_amount1.text = str(doc.get_freight())
 
 	ext_currency1 = ET.SubElement(gs_external, 'Currency_code')
 	ext_currency1.text = doc.currency

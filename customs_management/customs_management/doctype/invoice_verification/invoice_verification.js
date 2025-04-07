@@ -1,272 +1,294 @@
 // Copyright (c) 2025, Jollys Pharmacy Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on("Invoice Verification", {
-    reference_doctype: function (frm) {
-        var names = [];
-        frappe.call({
-          method: "get_tarif_application",
-          doc: frm.doc,
-          callback: function (lis) {
-            names = lis.message;
-            console.log("lissssssssssss", lis.message);
-          },
+frappe.ui.form.on('Invoice Verification', {
+    before_save: async function (frm) {
+        if (!frm.is_new()) {
+            let validated = await frm.trigger('update_item_tariff_numbers');
+            frappe.validated = validated;
+        }
+    },
+
+    onload: function(frm) {
+        if (!frm.is_new()) {
+            frm.toggle_enable('reference_document', false);
+        }
+        // Hides Add Row button from items tables
+        frm.get_field('items').grid.cannot_add_rows = true;
+        // Hides Delete button from items tables
+        frm.set_df_property('items', 'cannot_delete_rows', 1);
+        
+        frm.set_query('reference_document', () => {
+            return {
+                filters: {
+                    custom_invoice_verification_created: 0,
+                    custom_invoice_number: ['is', 'set'],
+                    docstatus: 1
+                }
+            };
         });
+    },
     
-        if (frm.doc.company && frm.doc.reference_doctype == "Purchase Invoice") {
-          frm.set_query("reference_document", () => {
-            return {
-              filters: [
-                ["company", "=", frm.doc.company],
-                ["docstatus", "=", 1],
-                ["update_stock", "=", 1],
-              ],
-              fields: ["reference_document", "creation"],
-              order_by: "creation desc",
-            };
-          });
-        } else {
-          frm.set_query("reference_document", () => {
-            return {
-              filters: [
-                // ["name","in",names],
-                ["company", "=", frm.doc.company],
-                ["docstatus", "=", 1],
-              ],
-              fields: ["reference_document", "creation"],
-              order_by: "creation desc",
-            };
-          });
-          console.log("ppppppppppppppppp");
+    refresh: function (frm) {
+        if (!frm.is_new()) {
+            frm.toggle_enable('reference_document', false);
         }
-      },
-    
-      reference_document: function (frm) {
-        if (frm.doc.reference_document) {
-          frappe.call({
-            method: "get_items_by_purchase_invoice",
-            doc: frm.doc,
-            callback: function (resp) {
-              frm.refresh_field("items");
-              frm.refresh_field("tariff_number_summary");
-              frm.refresh_field("grand_total");
-              frm.refresh_field("total_item_qty");
-              frm.refresh_field("item_count");
-              frm.refresh_field("currency");
-              frm.refresh_field("suppliers_name");
-              console.log(resp);
-            },
-          });
+        
+        // Hides check boxes on child tables
+        $('.row-check').hide();
+
+        if (!frm.is_new()) {
+            if (frm.is_dirty()) {
+                frm.reload_doc().then(() => {
+                    if (frm.is_dirty()) {
+                        frm.save()
+                    }
+                });
+            }
         }
-      },
-      onload: function (frm) {
-        console.log("ONload ");
-        if (frm.doc.__islocal) {
-          frappe.call({
-            method: "get_default_additional_charges",
-            doc: frm.doc,
-            callback: function (resp) {
-              frm.refresh_field("additional_charges");
-            },
-          });
-        }
-        // frappe.get_doc('Item',frm.doc.name).then(values => {
-        // 		debugger
-        // 		console.log(values);
-        // 	})
-      },
-      refresh: function (frm) {
+
         if (!frm.doc.__islocal) {
-          frm.add_custom_button(__("Go to Split up"), function () {
-            console.log("go to summary");
-            frappe.set_route(`app/print/Invoice Verification/${frm.doc.name}`);
-          });
+            frm.add_custom_button(__("Go to Split up"), function () {
+                frappe.set_route(`app/print/Invoice Verification/${frm.doc.name}`);
+            });
         }
-        // frm.add_custom_button(__("Test"), function () {
-        //   let base_amount = 0;
-        //   let amount = 0;
-        //   for (let i of frm.doc.items) {
-        //     console.log("ref doc",i.reference_document)
-        //     // if (i.reference_document != 'MAT-PRE-2024-00032'){
-        //     //   continue
-        //     // }
-            //     console.log("i",i,i.amount,i.base_amount)
-        //     base_amount += i.amount;
-        //     amount += i.base_amount;
-        //   }
-        //   console.log("base_amount",base_amount)
-        //   console.log("amount",amount)
-        // });
-    
-        if (!frm.doc.__islocal && frm.doc.docstatus == 0){
-          
-          frm.add_custom_button(__("Update tariff number"), function () {
-            console.log("Update tariff number");
-            frappe.call({
-            method: "update_tariff",
-            doc: frm.doc,
-            freeze:true,
-            freeze_message:"updating tariff number",
-            callback: function (resp) {
-              console.log('resp',resp)
-              frm.refresh_field('items')
-              frm.refresh_field('tariff_number_summary')
-              if (resp){
-                frm.trigger("reference_document")
-                frm.dirty()
-                // frm.save()
-                // frappe.msgprint(__('Document updated successfully'));
-              }
-            },
-          });
-        });
-        }
-    
-        console.log(frm.doc.company);
-        frm.set_query("reference_doctype", () => {
-          return {
-            filters: [["name", "in", ["Purchase Invoice", "Purchase Receipt"]]],
-          };
-        });
-        if (frm.doc.company && frm.doc.reference_doctype == "Purchase Invoice") {
-          frm.set_query("reference_document", () => {
-            return {
-              filters: [
-                ["company", "=", frm.doc.company],
-                ["docstatus", "=", 1],
-                ["update_stock", "=", 1],
-              ],
+
+        // Custom HTML Tariff Number Summary Table
+
+        let description_cache = {};  // Cache to store fetched tariff number descriptions
+
+        frm.fields_dict.tariff_number_summary.grid.update_footer = function() { 
+            let total_duty_amount = 0;
+            let table_rows_array = [];  // Store table rows as objects instead of concatenating strings
+
+            let fetch_tariff_desc = (tariff_number, callback) => {
+                // Check cache first
+                if (description_cache[tariff_number]) {
+                    callback(description_cache[tariff_number]);
+                } else {
+                    frappe.call({
+                        method: "frappe.client.get_value",
+                        freeze: true,
+                        freeze_message: 'Loading Tariff Number Summary...',
+                        args: {
+                            doctype: "Customs Tariff Number",
+                            filters: { name: tariff_number },
+                            fieldname: "description"
+                        },
+                        callback: function(response) {
+                            let description = response.message ? response.message.description : "No Description";
+                            description_cache[tariff_number] = description;  // Store in cache
+                            callback(description);
+                        }
+                    });
+                }
             };
-          });
-        } else {
-          frm.set_query("reference_document", () => {
-            return {
-              filters: [
-                ["company", "=", frm.doc.company],
-                ["docstatus", "=", 1],
-              ],
-              fields: ["reference_document", "creation"],
-              order_by: "creation desc",
+
+            let row_count = frm.doc.tariff_number_summary.length;
+            let processed_rows = 0;
+
+            let processRow = (row) => {
+                fetch_tariff_desc(row.customs_tariff_number, function(description) {
+                    total_duty_amount += row.duty_amount || 0;
+                    
+                    // Store row as an object for sorting later
+                    table_rows_array.push({
+                        customs_tariff_number: row.customs_tariff_number || '',
+                        description: description || '',
+                        duty_percentage: row.duty_percentage.toFixed(2) || '0.00',
+                        duty_amount: row.duty_amount || 0  // Store as number for sorting
+                    });
+
+                    processed_rows++;
+
+                    // Once all rows are processed, sort and render the table
+                    if (processed_rows === row_count) {
+                        // Sort by highest total duty amount
+                        table_rows_array.sort((a, b) => b.duty_amount - a.duty_amount);
+                        renderTable();
+                    }
+                });
             };
-          });
-          console.log("ppppppppppppppppp");
-        }
-        frm.fields_dict["additional_charges"].grid.get_field(
-          "expense_account"
-        ).get_query = function (doc, cdt, cdn) {
-          var child = locals[cdt][cdn];
-          // console.log(child);
-          return {
-            filters: [
-              [
-                "account_type",
-                "in",
-                [
-                  "Chargeable",
-                  "Expense Account",
-                  "Expenses Included In Asset Valuation",
-                  "Expenses Included In Valuation",
-                  "Income Account",
-                  "Tax",
-                ],
-              ],
-              ["company", "=", frm.doc.company],
-            ],
-          };
+
+            // Process each row asynchronously
+            frm.doc.tariff_number_summary.forEach(row => {
+                processRow(row);
+            });
+
+            // Function to render the table with sorted data
+            let renderTable = () => {
+                $(frm.fields_dict.tariff_number_summary.grid.wrapper).hide();
+                let parent = $(frm.fields_dict.tariff_number_summary.grid.wrapper).parent();
+                parent.find('.custom-tariff_number_summary-display-wrapper').remove();
+                
+                let table_rows = table_rows_array.map(row => `
+                    <tr>
+                        <td>${row.customs_tariff_number}</td>
+                        <td>${row.description}</td>
+                        <td>${row.duty_percentage} %</td>
+                        <td>$ ${row.duty_amount.toFixed(2)}</td>
+                    </tr>
+                `).join('');
+
+                parent.append(`
+                    <div class="custom-tariff_number_summary-display-wrapper" style="overflow-x: auto; width: 100%; margin-top: 15px; background-color: var(--card-bg, #fff);">
+                        <h4 style="font-weight: bold; margin-bottom: 10px; color: var(--text-color, #333);">Tariff Number Summary</h4>
+                        <table class="table table-bordered custom-tariff_number_summary-display" 
+                            style="min-width: 800px; border-radius: 10px; width: 100%; 
+                                    border: 3px solid var(--border-color, #dee2e6); 
+                                    background-color: var(--card-bg, #fff); color: var(--text-color, #333);">
+                            <thead style="background-color: var(--header-bg, #f8f9fa); color: var(--header-text, #333);">
+                                <tr style="font-weight: bold; border-bottom: 3px solid var(--border-color, #dee2e6);">
+                                    <th>Tariff Number</th>
+                                    <th>Description</th>
+                                    <th>Duty %</th>
+                                    <th>Duty Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${table_rows}
+                                <tr style="font-weight: bold; border-top: 3px solid var(--border-color, #dee2e6);">
+                                    <td colspan="3" style="text-align: right;">Total :</td>
+                                    <td>$ ${total_duty_amount.toFixed(2)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `);
+            };
         };
-      },
+
+        frm.fields_dict.tariff_number_summary.grid.update_footer();
+    },
     
-      item_details_tab: function (frm) {
-        frm.refresh_field("items");
-        frm.refresh_field("tariff_number_summary");
-        frm.refresh_field("grand_total");
-        frm.refresh_field("total_item_qty");
-        frm.refresh_field("item_count");
-      },
-    });
+    reference_document: function (frm) {
+        if (frm.doc.reference_document) {
+            frappe.call({
+                method: "get_items",
+                doc: frm.doc,
+                callback: function (r) {
+                    frm.refresh_field('items');
+                    frm.refresh_field('currency');
+                    frm.refresh_field('item_count');
+                    frm.refresh_field('total_item_qty');
+                    frm.refresh_field('tariff_number_summary');
+                    // $('.row-check').hide();
+                }
+            });
+        }
+    },
     
-    frappe.ui.form.on("Landed Cost Taxes and Charges", {
-      expense_account: function (frm, cdt, cdn) {
-        var child = locals[cdt][cdn];
-        var comp = frm.doc.company;
-        var currency = child.account_currency;
-    
-        frappe.db.get_doc("Company", comp).then(({ default_currency }) => {
-          //console.log(default_currency)
-          frappe.call({
-            method: "erpnext.setup.utils.get_exchange_rate",
-            args: {
-              from_currency: currency,
-              to_currency: default_currency,
-            },
-            callback: function (r) {
-              if (r.message) {
-                frappe.model.set_value(cdt, cdn, "exchange_rate", r.message);
-                console.log(r.message);
-              }
-            },
-          });
+    date_item_tariff_numbers: function (frm) {
+        return new Promise((resolve, reject) => {
+            frappe.call({
+                method: "update_item_tariff_numbers",
+                doc: frm.doc,
+                freeze: true,
+                freeze_message: "Updating item tariff numbers...",
+                callback: function (r) {
+                    let d = new frappe.ui.Dialog({
+                        title: '<b>Add Tariff Number</b>',
+                        fields: [
+                            {
+                                label: 'Tariff Number',
+                                fieldname: 'tariff_number',
+                                fieldtype: 'Data',
+                                reqd: 1
+                            },
+                            {
+                                label: 'Description',
+                                fieldname: 'description',
+                                fieldtype: 'Data',
+                                reqd: 1
+                            },
+                            {
+                                label: '',
+                                fieldname: 'section_break1',
+                                fieldtype: 'Section Break',
+                            },
+                            {
+                                label: 'Precision',
+                                fieldname: 'custom_precision',
+                                fieldtype: 'Int',
+                                default: '00',
+                                reqd: 1
+                            },
+                            {
+                                label: 'Markup Percentage',
+                                fieldname: 'custom_markup_percentage',
+                                fieldtype: 'Percent',
+                            },
+                            {
+                                label: 'Surcharge Percentage',
+                                fieldname: 'custom_surcharge_percentage',
+                                fieldtype: 'Percent',
+                            },
+                            {
+                                label: 'Excise Percentage',
+                                fieldname: 'custom_excise_percentage',
+                                fieldtype: 'Percent',
+                            },
+                            {
+                                label: '',
+                                fieldname: 'column_break1',
+                                fieldtype: 'Column Break',
+                            },
+                            {
+                                label: 'Duty Percentage',
+                                fieldname: 'custom_duty_percentage',
+                                fieldtype: 'Percent',
+                            },
+                            {
+                                label: 'VAT Percentage',
+                                fieldname: 'custom_vat_percentage',
+                                fieldtype: 'Percent',
+                                default: 15,
+                                reqd: 1
+                            },
+                            {
+                                label: 'Service Charge Percentage',
+                                fieldname: 'custom_service_charge_percentage',
+                                fieldtype: 'Percent',
+                            }
+                        ],
+                        size: 'small',
+                        primary_action_label: '<b>Add</b>',
+                        primary_action(values) {
+                            frappe.call({
+                                method: "create_tariff_number",
+                                doc: frm.doc,
+                                args: { 'values' : values },
+                                freeze: true,
+                                freeze_message: "Creating tariff number...",
+                                callback: function (r) {
+                                    if (r.message['status'] === 'success') {
+                                        frappe.show_alert({
+                                            message: r.message['message'],
+                                            indicator:'green'
+                                        }, 10);
+                                        d.hide();
+                                        frm.trigger('update_item_tariff_numbers');     
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    if (r.message['status'] === 'error') {
+                        frappe.show_alert({
+                            message: r.message['message'],
+                            indicator: 'red'
+                        }, 10);
+                        d.set_value('tariff_number', r.message['customs_tariff_number']);
+                        d.show();
+                        resolve(false);
+                    } else {
+                        d.hide();
+                        frm.trigger('reference_document');
+                        resolve(true);
+                    }
+                }
+            });
         });
-      },
-    });
-    
-    frappe.ui.form.on("Landed Cost Taxes and Charges", {
-      amount: function (frm, cdt, cdn) {
-        var child = locals[cdt][cdn];
-        frappe.call({
-          method: "get_exchange",
-          doc: frm.doc,
-          args: {
-            exca: child.expense_account,
-            amt: child.amount,
-          },
-          callback: function (resp) {
-            console.log("resp************************", resp);
-            // frappe.model.set_value(cdt,cdn,'account_currency',resp.message[0])
-            // freight values to be based on usd from supplier
-            // frappe.model.set_value(cdt,cdn,'exchange_rate',resp.message[1])
-            frappe.model.set_value(cdt, cdn, "base_amount", resp.message[2]);
-            // frappe.model.set_value(cdt,cdn,'account_currency',resp.message[3])
-            frm.refresh_field("additional_charges");
-          },
-        });
-      },
-      expense_account: function (frm, cdt, cdn) {
-        var child = locals[cdt][cdn];
-        frappe.call({
-          method: "get_exchange",
-          doc: frm.doc,
-          args: {
-            exca: child.expense_account,
-            amt: child.amount,
-          },
-          callback: function (resp) {
-            console.log("---------------------", resp);
-            // frappe.model.set_value(cdt,cdn,'account_currency',resp.message[0])
-            frappe.model.set_value(cdt, cdn, "account_currency", resp.message[0]);
-            frm.refresh_field("additional_charges");
-          },
-        });
-      },
-    });
-    
-    frappe.ui.form.on("Invoice Verification Item", {
-      customs_tariff_number:function(frm){
-        console.log("customs_tariff_number",frm.doc.reference_document)
-        // if (frm.doc.reference_document) {
-        //   frappe.call({
-        //     method: "get_items_by_purchase_invoice",
-        //     doc: frm.doc,
-        //     callback: function (resp) {
-        //       frm.refresh_field("items");
-        //       frm.refresh_field("tariff_number_summary");
-        //       frm.refresh_field("grand_total");
-        //       frm.refresh_field("total_item_qty");
-        //       frm.refresh_field("item_count");
-        //       frm.refresh_field("currency");
-        //       console.log(resp);
-        //     },
-        //   });
-        // }
-      }
-    });  
+    },
+});
+

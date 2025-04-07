@@ -1,27 +1,28 @@
 {
  "actions": [],
- "allow_rename": 1,
- "autoname": "naming_series:",
+ "autoname": "naming_series:naming_series",
  "creation": "2023-04-14 18:40:20.333690",
  "default_view": "List",
  "description": "The Verify Invoice form helps segregation of items based on Tariff Codes & also helps in the application for additional charges to adjust the landed cost of the procured items accordingly.",
  "doctype": "DocType",
+ "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "naming_series",
   "company",
-  "suppliers_name",
-  "invoice_number",
-  "column_break_g6b36",
   "reference_doctype",
-  "reference_document",
   "currency",
+  "column_break_g6b36",
+  "reference_document",
+  "invoice_number",
+  "suppliers_name",
   "column_break_frfij",
   "grand_total",
   "total_item_qty",
   "item_count",
   "distribute_charges_based_on",
+  "status",
   "additional_cost_section",
   "additional_charges",
   "total_taxes_and_charges",
@@ -33,19 +34,23 @@
  ],
  "fields": [
   {
+   "default": "INV-VER-.WW..###",
    "fieldname": "naming_series",
    "fieldtype": "Select",
+   "hidden": 1,
    "label": "Naming Series",
    "options": "INV-VER-.WW..###",
    "print_hide": 1,
+   "read_only": 1,
    "reqd": 1
   },
   {
+   "default": "Jollys Pharmacy Limited",
    "fieldname": "company",
    "fieldtype": "Link",
-   "in_standard_filter": 1,
    "label": "Company",
    "options": "Company",
+   "read_only": 1,
    "remember_last_selected_value": 1,
    "reqd": 1
   },
@@ -53,8 +58,6 @@
    "default": "Purchase Receipt",
    "fieldname": "reference_doctype",
    "fieldtype": "Link",
-   "in_filter": 1,
-   "in_standard_filter": 1,
    "label": "Reference DocType",
    "options": "DocType",
    "read_only": 1,
@@ -63,13 +66,12 @@
   },
   {
    "fieldname": "reference_document",
-   "fieldtype": "Dynamic Link",
+   "fieldtype": "Link",
    "in_filter": 1,
    "in_preview": 1,
    "in_standard_filter": 1,
    "label": "Reference Document",
-   "no_copy": 1,
-   "options": "reference_doctype",
+   "options": "Purchase Receipt",
    "reqd": 1
   },
   {
@@ -80,7 +82,7 @@
    "columns": 1,
    "fieldname": "grand_total",
    "fieldtype": "Currency",
-   "in_list_view": 1,
+   "hidden": 1,
    "in_preview": 1,
    "label": "Grand Total",
    "no_copy": 1,
@@ -114,12 +116,13 @@
    "label": "Additional Cost"
   },
   {
-   "default": "Qty",
+   "default": "Amount",
    "fieldname": "distribute_charges_based_on",
    "fieldtype": "Select",
    "hidden": 1,
    "label": "Distribute Charges Based On",
    "options": "Qty\nAmount",
+   "read_only": 1,
    "reqd": 1
   },
   {
@@ -138,7 +141,8 @@
    "fieldname": "tariff_number_summary",
    "fieldtype": "Table",
    "label": "Tariff Number Summary",
-   "options": "Tariff Number Summary"
+   "options": "Tariff Number Summary",
+   "read_only": 1
   },
   {
    "fieldname": "currency",
@@ -152,6 +156,7 @@
   {
    "fieldname": "total",
    "fieldtype": "Currency",
+   "hidden": 1,
    "label": "Total",
    "options": "currency",
    "read_only": 1
@@ -195,13 +200,23 @@
    "fieldname": "invoice_number",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Invoice Number"
+   "label": "Invoice Number",
+   "read_only": 1
+  },
+  {
+   "default": "Unverified",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Unverified\nVerified",
+   "read_only": 1
   }
  ],
- "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-02-24 00:43:12.285525",
+ "make_attachments_public": 1,
+ "modified": "2025-04-01 12:58:10.033423",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Invoice Verification",
@@ -275,8 +290,11 @@
    "write": 1
   }
  ],
+ "search_fields": "invoice_number, reference_document, suppliers_name",
+ "show_title_field_in_link": 1,
  "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
+ "title_field": "invoice_number",
  "track_changes": 1
 }
