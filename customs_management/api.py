@@ -1632,12 +1632,15 @@ def schedule_sync_counterpoint_sales():
 
 def sync_counterpoint_sales():
 	locations = frappe.get_doc('Store Location Mapping').store_location_mapping
-	tickets = []
+	fetched_tickets = []
 	for location in locations:
 		location_id = location.store_location
 		location_sales = get_counterpoint_sales(location_id)
-		tickets.extend(location_sales)
-	for ticket in tickets:
+		fetched_tickets.extend(location_sales)
+
+	all_tickets = query_counterpoint_tickets(fetched_tickets)
+	
+	for ticket in all_tickets:
 		frappe.enqueue(
 			create_counterpoint_sales_ticket,
 			queue = 'short', 
@@ -1647,7 +1650,7 @@ def sync_counterpoint_sales():
 			job_name = f"Sync Ticket {ticket['ticket_number']}",
 			ticket = ticket
 		)
-	
+
 def get_counterpoint_sales(location_id):
 	conn = pymssql.connect(
 		server = '10.0.10.5',
@@ -2505,73 +2508,106 @@ def update_ordered_percentage(material_request):
         'message': f'Material Request is already transferred.'
     }
 
+def query_counterpoint_tickets(fetched_tickets):
+	conn = pymssql.connect(
+		server = '10.0.10.5',
+		user = 'SA',
+		password = 'Counterpoint1',
+		database = 'Jollyspharm',
+		as_dict = True
+	)
+	cursor = conn.cursor()
+	query = """
+		SELECT
+			TKT_NO
+		FROM
+			PS_TKT_HIST
+		WHERE
+			PS_TKT_HIST.TKT_TYP <> 'A' AND
+			PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+	"""
+	cursor.execute(query) 
+	all_tickets = cursor.fetchall()
+	out = []
 
-@frappe.whitelist()
-def query_counterpoint_tickets():
-     # Specifying the ODBC driver, server name, database, etc. directly
-    conn = pymssql.connect(
-    server='10.0.10.5',
-    user='SA',
-    password='Counterpoint1',
-    database='Jollyspharm',
-    as_dict=True )
+	if not fetched_tickets and not all_tickets:
+		return
 
-    # Create a cursor from the connection   
-    cursor = conn.cursor()
-    # Specify date range and type of ticket
-    date_start = '2025-04-06'
-    date_end = '2025-04-06'    
-    ticket_type ='A'
-    #print('SELECT TKT_NO AS ticket_number FROM PS_TKT_HIST WHERE TKT_TYP <> %s AND BUS_DAT BETWEEN %s AND %s',(ticket_type, date_start, date_end))
-    cursor.execute('SELECT TKT_NO AS ticket_number FROM PS_TKT_HIST WHERE TKT_TYP <> %s AND BUS_DAT BETWEEN %s AND %s',(ticket_type, date_start, date_end))
-    records = cursor.fetchall()
+	missing_tickets = [item['TKT_NO'] for item in fetched_tickets if item not in all_tickets] + [item['TKT_NO'] for item in all_tickets if item not in fetched_tickets]
 
-    #retrieve list of tickets to compare against counterpoint list       
-    date_start_p =  date_end + 'T00:00:00.000Z'
-    date_end_p = date_start + 'T23:59:59.000Z'
-    #print(date_end_p)
-    #print(date_start)
-    
-    #to query live after moving to it
-    #sqlTicket = frappe.db.sql(f"""
-    #    SELECT ticket_number
-    #    FROM `tabCounterPoint Sales`
-    #    WHERE ticket_date BETWEEN '{date_start_p}' AND '{date_end_p}'
-    #    """,as_dict=True)
-        
-    #jrps = sqlTicket
-    #jrp2= frappe.db.get_all('CounterPoint Sales', {'ticket_date':["between",[date_start_p,date_end_p]]},["ticket_number"])
-    #print(jrp2)
-   
-    # jrps= json.loads(requests.get('http://10.0.10.155/api/method/count_tickets',params={'date_start': date_start_p, 'date_end': date_end_p}).text)
-    jrps = frappe.db.sql(f"""
-        SELECT ticket_number
-        FROM `tabCounterPoint Sales`
-        WHERE ticket_date LIKE '2025-04-06%'
-        
-        """,
-    as_dict=True
-    )
-    # jrps = jrps['message']
-    difference = len(records) - len(jrps)
-    
-    print(date_start,': ', len(records),' - ', len(jrps),' = ', difference)
-    if jrps and records:
-        non_matching_values = [item for item in jrps if item not in records] + [item for item in records if item not in jrps]
+	if not missing_tickets:
+		return
 
-        if non_matching_values:
-            non_matching_tickets = [ticket['ticket_number'] for ticket in non_matching_values]
-            #print(non_matching_tickets)
-            #item_list(non_matching_tickets)
-        else:
-            print("No ticket mismatches")
-    else:
-        print("No tickets to compare")
+	for ticket in missing_tickets:
+		query2 = f"""
+			SELECT TOP 1
+				PS_TKT_HIST_LIN.QTY_SOLD,
+				PS_TKT_HIST.CUST_NO,
+				PS_TKT_HIST_LIN.ITEM_NO,
+				PS_TKT_HIST_LIN.TKT_NO,
+				PS_TKT_HIST_LIN.EXT_PRC,
+				PS_TKT_HIST_LIN.EXT_COST,
+				IM_ITEM.QTY_DECS,
+				AR_CUST.NAM,
+				PS_TKT_HIST_LIN.DESCR,
+				PS_TKT_HIST_LIN.BUS_DAT,
+				PS_TKT_HIST.TKT_TYP,
+				PS_TKT_HIST_LIN.LIN_TYP,
+				PS_TKT_HIST_LIN.STK_LOC_ID,
+				PS_TKT_HIST.STK_LOC_ID,
+				PS_TKT_HIST_LIN.QTY_NUMER,
+				PS_TKT_HIST_LIN.QTY_DENOM
+			FROM
+				PS_TKT_HIST
+			LEFT OUTER JOIN
+				AR_CUST
+			ON
+				PS_TKT_HIST.CUST_NO = AR_CUST.CUST_NO
+			INNER JOIN
+				PS_TKT_HIST_LIN 
+			ON
+				PS_TKT_HIST.BUS_DAT = PS_TKT_HIST_LIN.BUS_DAT AND PS_TKT_HIST.DOC_ID = PS_TKT_HIST_LIN.DOC_ID
+			LEFT OUTER JOIN
+				IM_ITEM IM_ITEM
+			ON
+				PS_TKT_HIST_LIN.ITEM_NO = IM_ITEM.ITEM_NO
+			WHERE
+				PS_TKT_HIST_LIN.TKT_NO = {ticket['TKT_NO']} AND
+				PS_TKT_HIST.TKT_TYP <> 'A' AND
+				PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+		"""
+		cursor.execute(query2)
+		result = (cursor.fetchall())
+		ticket_data = {}
 
-    conn.close()
-    counter = 0
-    jrp_list = []
-    
+		ticket_data[result['TKT_NO']] = {
+			"items": [
+				{
+				"item_code": result['ITEM_NO'],
+				"item_name": result['DESCR'],
+				"qty": result['QTY_SOLD'],
+				"price": result['EXT_PRC'],
+				"exact_cost": result['EXT_COST'],
+				"description": result['DESCR'],
+				},
+			], 
+			"customer_number": result['CUST_NO'],
+			"customer_name": result['NAM'],
+			"ticket_number": result['TKT_NO'],
+			"ticket_type": result['TKT_TYP'],
+			"post_date": result['BUS_DAT'],
+			"ticket_date": result['BUS_DAT'],
+			"ticket_location": result['STK_LOC_ID'][0],
+			"line_type": result['LIN_TYP'],
+			"total_quantity": result['QTY_SOLD'],
+		}
+		
+		ticket_data = [{**v} for k, v in ticket_data.items()]
+		out.extend(ticket_data)
+
+	conn.close()
+	return out
+		
 @frappe.whitelist()    
 def item_list(ticket_numbers):
     print('1')
@@ -2879,65 +2915,115 @@ def pharmacy_scanner(barcode:str, location:str) -> dict:
 
     return out
 
-# import pandas as pd
-# from sklearn.model_selection import train_test_split
-# from sklearn.feature_extraction.text import TfidfVectorizer
-# from sklearn.naive_bayes import MultinomialNB
-# from sklearn.pipeline import make_pipeline
-# from sklearn.metrics import classification_report
-# import re
-# import html
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
+from sklearn.metrics import classification_report
+import re
+import html
 
-# def sanitize_input(description, brands):
-#     # Decode HTML entities
-#     cleaned = html.unescape(description)
-#     # Remove brand names from beginning
-#     words = cleaned.split()
-#     if words and words[0].upper() in brands:
-#         cleaned = ' '.join(words[1:])
-#     # Remove special characters except spaces
-#     cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', cleaned)
-#     # Normalize whitespace and casing
-#     cleaned = ' '.join(cleaned.lower().strip().split())
-#     return cleaned
+def sanitize_input(description, brands):
+    # Decode HTML entities
+    cleaned = html.unescape(description)
+    # Remove brand names from beginning
+    words = cleaned.split()
+    if words and words[0].upper() in brands:
+        cleaned = ' '.join(words[1:])
+    # Remove special characters except spaces
+    cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', cleaned)
+    # Normalize whitespace and casing
+    cleaned = ' '.join(cleaned.lower().strip().split())
+    return cleaned
 
-# def testing_ai():
-# 	items = frappe.db.get_list('Item', 
-# 		filters = {
-# 			'description': ['is', 'set'], 
-# 			'customs_tariff_number': ['is', 'set']
-# 		},
-# 		fields = ['description', 'customs_tariff_number']
+def testing_ai():
+	items = frappe.db.get_list('Item', 
+		filters = {
+			'description': ['is', 'set'], 
+			'customs_tariff_number': ['is', 'set']
+		},
+		fields = ['description', 'customs_tariff_number']
+	)
+
+	df = pd.DataFrame([{
+			"Description": item.description,
+			"Customs Tariff Number": item.customs_tariff_number
+		} for item in items]
+	)
+
+	brands = {item.description.split()[0].upper() for item in items}
+
+	# Clean training data
+	df['Cleaned Description'] = df['Description'].apply(
+		lambda x: sanitize_input(x, brands))
+
+	X = df['Cleaned Description']
+	y = df['Customs Tariff Number']
+
+	# Train/test split and model setup
+	X_train, X_test, y_train, y_test = train_test_split(
+		X, y, test_size=0.2, random_state=42)
+
+	model = make_pipeline(TfidfVectorizer(), MultinomialNB())
+	model.fit(X_train, y_train)
+
+	# Evaluation
+	y_pred = model.predict(X_test)
+	print(classification_report(y_test, y_pred))
+
+	# Example prediction with sanitization
+	example = ['PREDNISOLONE']
+	clean_example = [sanitize_input(example[0], brands)]
+	print(example[0])
+	print('Predicted:', model.predict(clean_example)[0])
+
+# import openai
+
+# openai.api_key = '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'
+
+# def ask_gpt(model="gpt-4"):
+# 	tariff_records = frappe.db.get_all('Item', fields=['description', 'customs_tariff_number'], limit=100)
+# 	tariff_data_str = "\n".join(
+# 		[f"{record['customs_tariff_number']}: {record['description']}" for record in tariff_records]
 # 	)
+# 	item_description = 'BATTERY OPERATED ENGRAVING PEN'
+# 	prompt = f"""
+# 		SYSTEM PROTOCOL ACTIVATED: TARIFF CLASSIFIER v3.2 (STRICT CODE-ONLY OUTPUT)
 
-# 	df = pd.DataFrame([{
-# 			"Description": item.description,
-# 			"Customs Tariff Number": item.customs_tariff_number
-# 		} for item in items]
+# 		1. SILENT ANALYSIS PHASE:
+# 		- Material decomposition: glass(70%) + metal(25%) + plastic(5%)
+# 		- Functional classification: personal grooming device
+# 		- Manufacturing process: molded frame + silvered glass
+
+# 		2. MANDATORY MATCHING SEQUENCE:
+# 		a) Attempt exact product match in REFERENCE DATA below
+# 		b) Analyze materials, function, and manufacturing method to identify ALL applicable tariff classifications
+# 		c) Select the **most specific and relevant** code based on global customs logic
+# 		d) If no definitive classification exists, default to a general fallback code (format: xxxx.90000)
+
+# 		REFERENCE DATA:
+# 		{tariff_data_str}
+
+# 		3. OUTPUT GENERATION RULES:
+# 		- FORMAT: ^\\d{{4}}\\.\\d{{5}}$ (regex-enforced)
+# 		- EXAMPLES: 7009.91000, 9605.90000
+# 		- STRICTURE: If no valid classification found, use 9999.99999 (null value placeholder)
+
+# 		4. EXECUTION DIRECTIVE:
+# 		YOUR OUTPUT MUST BE THE CODE ITSELF — NO PREFIX, NO SUFFIX, NO SENTENCES.
+# 		UNAUTHORIZED TEXT WILL CAUSE SYSTEM REJECTION.
+
+# 		PRODUCT: {item_description}
+# 		FINAL OUTPUT:
+# 	"""
+# 	response = openai.ChatCompletion.create(
+# 		model=model,
+# 		messages=[
+# 			{"role": "system", "content": "You are a global trade and customs classification expert with access to current tariff schedule data."},
+# 			{"role": "user", "content": prompt}
+# 		],
+# 		temperature=0.0,
+# 		max_tokens=50,
 # 	)
-
-# 	brands = {item.description.split()[0].upper() for item in items}
-
-# 	# Clean training data
-# 	df['Cleaned Description'] = df['Description'].apply(
-# 		lambda x: sanitize_input(x, brands))
-
-# 	X = df['Cleaned Description']
-# 	y = df['Customs Tariff Number']
-
-# 	# Train/test split and model setup
-# 	X_train, X_test, y_train, y_test = train_test_split(
-# 		X, y, test_size=0.2, random_state=42)
-
-# 	model = make_pipeline(TfidfVectorizer(), MultinomialNB())
-# 	model.fit(X_train, y_train)
-
-# 	# Evaluation
-# 	y_pred = model.predict(X_test)
-# 	print(classification_report(y_test, y_pred))
-
-# 	# Example prediction with sanitization
-# 	example = ['PREDNISOLONE SODIUM 15MG/5ML 237ML']
-# 	clean_example = [sanitize_input(example[0], brands)]
-# 	print(example[0])
-# 	print('Predicted:', model.predict(clean_example)[0])
+# 	return response['choices'][0]['message']['content'].strip()
