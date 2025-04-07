@@ -234,6 +234,11 @@ def sort_by_tariff_number(item):
 
 def is_local_purchase_receipt(pr):
 	supplier = frappe.db.get_value('Purchase Receipt', pr.name, 'supplier')
+	supplier_country = frappe.db.get_value('Supplier', supplier, 'country')
+    
+	if supplier_country != '' and supplier_country != 'Dominica':
+		return False
+
 	supplier_address = frappe.db.get_value('Supplier', supplier, 'supplier_primary_address')
 	address_country = frappe.db.get_value('Address', supplier_address, 'country')
 
