@@ -2915,72 +2915,70 @@ def pharmacy_scanner(barcode:str, location:str) -> dict:
 
     return out
 
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import classification_report
-import re
-import html
+# import pandas as pd
+# from sklearn.model_selection import train_test_split
+# from sklearn.feature_extraction.text import TfidfVectorizer
+# from sklearn.naive_bayes import MultinomialNB
+# from sklearn.pipeline import make_pipeline
+# from sklearn.metrics import classification_report
+# import re
+# import html
 
-def sanitize_input(description, brands):
-    # Decode HTML entities
-    cleaned = html.unescape(description)
-    # Remove brand names from beginning
-    words = cleaned.split()
-    if words and words[0].upper() in brands:
-        cleaned = ' '.join(words[1:])
-    # Remove special characters except spaces
-    cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', cleaned)
-    # Normalize whitespace and casing
-    cleaned = ' '.join(cleaned.lower().strip().split())
-    return cleaned
+# def sanitize_input(description, brands):
+#     # Decode HTML entities
+#     cleaned = html.unescape(description)
+#     # Remove brand names from beginning
+#     words = cleaned.split()
+#     if words and words[0].upper() in brands:
+#         cleaned = ' '.join(words[1:])
+#     # Remove special characters except spaces
+#     cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', cleaned)
+#     # Normalize whitespace and casing
+#     cleaned = ' '.join(cleaned.lower().strip().split())
+#     return cleaned
 
-def testing_ai():
-	items = frappe.db.get_list('Item', 
-		filters = {
-			'description': ['is', 'set'], 
-			'customs_tariff_number': ['is', 'set']
-		},
-		fields = ['description', 'customs_tariff_number']
-	)
+# def testing_ai():
+# 	items = frappe.db.get_list('Item', 
+# 		filters = {
+# 			'description': ['is', 'set'], 
+# 			'customs_tariff_number': ['is', 'set']
+# 		},
+# 		fields = ['description', 'customs_tariff_number']
+# 	)
 
-	df = pd.DataFrame([{
-			"Description": item.description,
-			"Customs Tariff Number": item.customs_tariff_number
-		} for item in items]
-	)
+# 	df = pd.DataFrame([{
+# 			"Description": item.description,
+# 			"Customs Tariff Number": item.customs_tariff_number
+# 		} for item in items]
+# 	)
 
-	brands = {item.description.split()[0].upper() for item in items}
+# 	brands = {item.description.split()[0].upper() for item in items}
 
-	# Clean training data
-	df['Cleaned Description'] = df['Description'].apply(
-		lambda x: sanitize_input(x, brands))
+# 	# Clean training data
+# 	df['Cleaned Description'] = df['Description'].apply(
+# 		lambda x: sanitize_input(x, brands))
 
-	X = df['Cleaned Description']
-	y = df['Customs Tariff Number']
+# 	X = df['Cleaned Description']
+# 	y = df['Customs Tariff Number']
 
-	# Train/test split and model setup
-	X_train, X_test, y_train, y_test = train_test_split(
-		X, y, test_size=0.2, random_state=42)
+# 	# Train/test split and model setup
+# 	X_train, X_test, y_train, y_test = train_test_split(
+# 		X, y, test_size=0.2, random_state=42)
 
-	model = make_pipeline(TfidfVectorizer(), MultinomialNB())
-	model.fit(X_train, y_train)
+# 	model = make_pipeline(TfidfVectorizer(), MultinomialNB())
+# 	model.fit(X_train, y_train)
 
-	# Evaluation
-	y_pred = model.predict(X_test)
-	print(classification_report(y_test, y_pred))
+# 	# Evaluation
+# 	y_pred = model.predict(X_test)
+# 	print(classification_report(y_test, y_pred))
 
-	# Example prediction with sanitization
-	example = ['PREDNISOLONE']
-	clean_example = [sanitize_input(example[0], brands)]
-	print(example[0])
-	print('Predicted:', model.predict(clean_example)[0])
+# 	# Example prediction with sanitization
+# 	example = ['PREDNISOLONE']
+# 	clean_example = [sanitize_input(example[0], brands)]
+# 	print(example[0])
+# 	print('Predicted:', model.predict(clean_example)[0])
 
 # import openai
-
-# openai.api_key = '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'
 
 # def ask_gpt(model="gpt-4"):
 # 	tariff_records = frappe.db.get_all('Item', fields=['description', 'customs_tariff_number'], limit=100)
