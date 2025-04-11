@@ -9,7 +9,7 @@
    "label": "Top Suppliers"
   }
  ],
- "content": "[{\"id\":\"MNXVqZgh1E\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Import</span>\",\"col\":12}},{\"id\":\"GdnY71pvya\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Weekly Invoice Verifications\",\"col\":6}},{\"id\":\"lErTsinNdp\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Top Suppliers\",\"col\":6}},{\"id\":\"7kDMlWJUmW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"p1z-JYKpb-\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"MxEHl1sz5Q\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Invoices\",\"col\":4}},{\"id\":\"GCAIm5ym15\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customs Entry\",\"col\":4}},{\"id\":\"ByNGOzvunN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Costing\",\"col\":4}},{\"id\":\"e3fdwCLfEq\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"kBNnQ0SLQ7\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Tariff Numbers\",\"col\":3}},{\"id\":\"rf61PkEObW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"X9RE7Plb7L\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Import &amp; Settings</b></span>\",\"col\":12}},{\"id\":\"DnZnmXUO__\",\"type\":\"card\",\"data\":{\"card_name\":\"Import Documents\",\"col\":4}},{\"id\":\"AmeuucFj-B\",\"type\":\"card\",\"data\":{\"card_name\":\"Master Data\",\"col\":4}},{\"id\":\"cBx1OfEzMv\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}}]",
+ "content": "[{\"id\":\"MNXVqZgh1E\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">Import</span>\",\"col\":12}},{\"id\":\"GdnY71pvya\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Weekly Invoice Verifications\",\"col\":6}},{\"id\":\"lErTsinNdp\",\"type\":\"chart\",\"data\":{\"chart_name\":\"Top Suppliers\",\"col\":6}},{\"id\":\"7kDMlWJUmW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"p1z-JYKpb-\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Shortcuts</b></span>\",\"col\":12}},{\"id\":\"MxEHl1sz5Q\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Invoices\",\"col\":3}},{\"id\":\"Cq331fDjWc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Orders\",\"col\":3}},{\"id\":\"GCAIm5ym15\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Customs Entry\",\"col\":3}},{\"id\":\"ByNGOzvunN\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Costing\",\"col\":3}},{\"id\":\"e3fdwCLfEq\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"kBNnQ0SLQ7\",\"type\":\"number_card\",\"data\":{\"number_card_name\":\"Tariff Numbers\",\"col\":3}},{\"id\":\"rf61PkEObW\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"X9RE7Plb7L\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Import &amp; Settings</b></span>\",\"col\":12}},{\"id\":\"DnZnmXUO__\",\"type\":\"card\",\"data\":{\"card_name\":\"Import Documents\",\"col\":4}},{\"id\":\"AmeuucFj-B\",\"type\":\"card\",\"data\":{\"card_name\":\"Master Data\",\"col\":4}},{\"id\":\"cBx1OfEzMv\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}}]",
  "creation": "2023-07-12 02:50:29.301280",
  "custom_blocks": [],
  "docstatus": 0,
@@ -106,7 +106,7 @@
    "type": "Link"
   }
  ],
- "modified": "2025-03-12 15:53:38.239823",
+ "modified": "2025-04-11 12:15:09.625444",
  "modified_by": "Administrator",
  "module": "Customs Management",
  "name": "Import",
@@ -130,6 +130,15 @@
  ],
  "sequence_id": 22.0,
  "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "format": "{} to verify",
+   "label": "Orders",
+   "link_to": "Order Verification",
+   "stats_filter": "[[\"Order Verification\",\"status\",\"=\",\"Unverified\",false]]",
+   "type": "DocType"
+  },
   {
    "color": "Yellow",
    "doc_view": "List",

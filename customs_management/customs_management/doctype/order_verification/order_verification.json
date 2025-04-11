@@ -1,0 +1,201 @@
+{
+ "actions": [],
+ "autoname": "naming_series:naming_series",
+ "creation": "2023-04-14 18:40:20.333690",
+ "default_view": "List",
+ "description": "The Order Verification form helps segregation of items based on Tariff Codes & also helps in the application for additional charges to adjust the landed cost of the procured items accordingly.",
+ "doctype": "DocType",
+ "document_type": "Document",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "company",
+  "currency",
+  "status",
+  "column_break_g6b36",
+  "order_number",
+  "total_item_qty",
+  "item_count",
+  "item_details_tab",
+  "items",
+  "tariff_number_summary",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "default": "ORD-VER-.WW..###",
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "hidden": 1,
+   "label": "Naming Series",
+   "options": "ORD-VER-.WW..###",
+   "print_hide": 1,
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "default": "Jollys Pharmacy Limited",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1,
+   "remember_last_selected_value": 1,
+   "reqd": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "total_item_qty",
+   "fieldtype": "Float",
+   "in_preview": 1,
+   "label": "Total Item Qty",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_count",
+   "fieldtype": "Int",
+   "in_preview": 1,
+   "label": "Item Count",
+   "no_copy": 1,
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Invoice Verification Item"
+  },
+  {
+   "fieldname": "tariff_number_summary",
+   "fieldtype": "Table",
+   "label": "Tariff Number Summary",
+   "options": "Tariff Number Summary",
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "fieldtype": "Link",
+   "label": "Currency",
+   "options": "Currency",
+   "print_hide": 1,
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Invoice Verification",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "item_details_tab",
+   "fieldtype": "Section Break",
+   "label": "Item Details"
+  },
+  {
+   "fieldname": "column_break_g6b36",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Unverified",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Unverified\nVerified",
+   "read_only": 1
+  },
+  {
+   "columns": 3,
+   "fieldname": "order_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Order Number",
+   "read_only": 1
+  }
+ ],
+ "in_create": 1,
+ "is_submittable": 1,
+ "links": [],
+ "make_attachments_public": 1,
+ "modified": "2025-04-10 16:33:04.944076",
+ "modified_by": "Administrator",
+ "module": "Customs Management",
+ "name": "Order Verification",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "amend": 1,
+   "cancel": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Purchase Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Import User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "amend": 1,
+   "cancel": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Import Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "show_title_field_in_link": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "title_field": "order_number",
+ "track_changes": 1
+}

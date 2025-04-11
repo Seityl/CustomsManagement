@@ -1,7 +1,7 @@
 // Copyright (c) 2025, Jollys Pharmacy Ltd. and contributors
 // For license information, please see license.txt
 
-frappe.ui.form.on('Invoice Verification', {
+frappe.ui.form.on('Order Verification', {
     before_save: async function (frm) {
         if (!frm.is_new()) {
             let validated = await frm.trigger('update_item_tariff_numbers');
@@ -10,30 +10,13 @@ frappe.ui.form.on('Invoice Verification', {
     },
 
     onload: function(frm) {
-        if (!frm.is_new()) {
-            frm.toggle_enable('reference_document', false);
-        }
         // Hides Add Row button from items tables
         frm.get_field('items').grid.cannot_add_rows = true;
         // Hides Delete button from items tables
         frm.set_df_property('items', 'cannot_delete_rows', 1);
-        
-        frm.set_query('reference_document', () => {
-            return {
-                filters: {
-                    custom_invoice_verification_created: 0,
-                    custom_invoice_number: ['is', 'set'],
-                    docstatus: 1
-                }
-            };
-        });
     },
     
     refresh: function (frm) {
-        if (!frm.is_new()) {
-            frm.toggle_enable('reference_document', false);
-        }
-        
         // Hides check boxes on child tables
         $('.row-check').hide();
 
@@ -45,12 +28,6 @@ frappe.ui.form.on('Invoice Verification', {
                     }
                 });
             }
-        }
-
-        if (!frm.doc.__islocal) {
-            frm.add_custom_button(__("Go to Split up"), function () {
-                frappe.set_route(`app/print/Invoice Verification/${frm.doc.name}`);
-            });
         }
 
         // Custom HTML Tariff Number Summary Table
@@ -72,7 +49,7 @@ frappe.ui.form.on('Invoice Verification', {
                         freeze_message: 'Loading Tariff Number Summary...',
                         args: {
                             doctype: "Customs Tariff Number",
-                            filters: { name: tariff_number },
+                            filters: { name : tariff_number },
                             fieldname: "description"
                         },
                         callback: function(response) {
@@ -161,24 +138,7 @@ frappe.ui.form.on('Invoice Verification', {
         frm.fields_dict.tariff_number_summary.grid.update_footer();
     },
     
-    reference_document: function (frm) {
-        if (frm.doc.reference_document) {
-            frappe.call({
-                method: "get_items",
-                doc: frm.doc,
-                callback: function (r) {
-                    frm.refresh_field('items');
-                    frm.refresh_field('currency');
-                    frm.refresh_field('item_count');
-                    frm.refresh_field('total_item_qty');
-                    frm.refresh_field('tariff_number_summary');
-                    // $('.row-check').hide();
-                }
-            });
-        }
-    },
-    
-    udate_item_tariff_numbers: function (frm) {
+    update_item_tariff_numbers: function (frm) {
         return new Promise((resolve, reject) => {
             frappe.call({
                 method: "update_item_tariff_numbers",
@@ -283,7 +243,6 @@ frappe.ui.form.on('Invoice Verification', {
                         resolve(false);
                     } else {
                         d.hide();
-                        frm.trigger('reference_document');
                         resolve(true);
                     }
                 }
@@ -291,4 +250,3 @@ frappe.ui.form.on('Invoice Verification', {
         });
     },
 });
-

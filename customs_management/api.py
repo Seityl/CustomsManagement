@@ -5,7 +5,6 @@ import pymssql
 
 from bs4 import BeautifulSoup
 
-from customs_management.customs_management.doctype import counterpoint_sales_
 import frappe
 
 from erpnext.setup.utils import get_exchange_rate
@@ -1629,116 +1628,137 @@ def schedule_sync_counterpoint_sales():
         now = True, 
         job_name = 'Sync Counterpoint Sales',
     )
+def get_qty_sold():
+    conn = pymssql.connect(
+        server = '10.0.10.5',
+        user = 'SA',
+        password = 'Counterpoint1',
+        database = 'Jollyspharm',
+        as_dict = True
+    )
+    cursor = conn.cursor()
+    query = """
+        SELECT
+            SUM(PS_TKT_HIST_LIN.QTY_SOLD) AS total_qty_sold
+        FROM
+            PS_TKT_HIST
+        INNER JOIN
+            PS_TKT_HIST_LIN 
+        ON
+            PS_TKT_HIST.BUS_DAT = PS_TKT_HIST_LIN.BUS_DAT AND
+            PS_TKT_HIST.DOC_ID = PS_TKT_HIST_LIN.DOC_ID
+        WHERE
+            PS_TKT_HIST.TKT_TYP <> 'A' AND
+            PS_TKT_HIST_LIN.ITEM_NO = 'JP72416' AND
+            PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
+    """
+    cursor.execute(query)
+    results = cursor.fetchall()[0]
+    return results
 
 def sync_counterpoint_sales():
-	locations = frappe.get_doc('Store Location Mapping').store_location_mapping
-	fetched_tickets = []
-	for location in locations:
-		location_id = location.store_location
-		location_sales = get_counterpoint_sales(location_id)
-		fetched_tickets.extend(location_sales)
-
-	all_tickets = query_counterpoint_tickets(fetched_tickets)
-	
-	for ticket in all_tickets:
-		frappe.enqueue(
-			create_counterpoint_sales_ticket,
-			queue = 'short', 
-			timeout = 3600,
-			is_async = True,
-			now = False, 
-			job_name = f"Sync Ticket {ticket['ticket_number']}",
-			ticket = ticket
-		)
+    locations = frappe.get_doc('Store Location Mapping').store_location_mapping
+    fetched_tickets = []
+    for location in locations:
+        location_id = location.store_location
+        location_sales = get_counterpoint_sales(location_id)
+        fetched_tickets.extend(location_sales)
+    print('fetched tickets: ', len(fetched_tickets))
+    all_tickets = query_counterpoint_tickets(fetched_tickets)
+    print('all tickets: ', len(all_tickets))
+    return
+    for ticket in all_tickets:
+        frappe.enqueue(
+            create_counterpoint_sales_ticket,
+            queue = 'short', 
+            timeout = 3600,
+            is_async = True,
+            now = False, 
+            job_name = f"Sync Ticket {ticket['ticket_number']}",
+            ticket = ticket
+        )
 
 def get_counterpoint_sales(location_id):
-	conn = pymssql.connect(
-		server = '10.0.10.5',
-		user = 'SA',
-		password = 'Counterpoint1',
-		database = 'Jollyspharm',
-		as_dict = True
-	)
-	cursor = conn.cursor()
-	query = f"""
-		SELECT
-			PS_TKT_HIST_LIN.QTY_SOLD,
-			PS_TKT_HIST.CUST_NO,
-			PS_TKT_HIST_LIN.ITEM_NO,
-			PS_TKT_HIST_LIN.TKT_NO,
-			PS_TKT_HIST_LIN.EXT_PRC,
-			PS_TKT_HIST_LIN.EXT_COST,
-			IM_ITEM.QTY_DECS,
-			AR_CUST.NAM,
-			PS_TKT_HIST_LIN.DESCR,
-			PS_TKT_HIST_LIN.BUS_DAT,
-			PS_TKT_HIST.TKT_TYP,
-			PS_TKT_HIST_LIN.LIN_TYP,
-			PS_TKT_HIST_LIN.STK_LOC_ID,
-			PS_TKT_HIST.STK_LOC_ID,
-			PS_TKT_HIST_LIN.QTY_NUMER,
-			PS_TKT_HIST_LIN.QTY_DENOM
-		FROM
-			PS_TKT_HIST
-		LEFT OUTER JOIN
-			AR_CUST
-		ON
-			PS_TKT_HIST.CUST_NO = AR_CUST.CUST_NO
-		INNER JOIN
-			PS_TKT_HIST_LIN 
-		ON
-			PS_TKT_HIST.BUS_DAT = PS_TKT_HIST_LIN.BUS_DAT AND PS_TKT_HIST.DOC_ID = PS_TKT_HIST_LIN.DOC_ID
-		LEFT OUTER JOIN
-			IM_ITEM IM_ITEM
-		ON
-			PS_TKT_HIST_LIN.ITEM_NO = IM_ITEM.ITEM_NO
-		WHERE
-			PS_TKT_HIST_LIN.STR_ID = {location_id} AND
-			PS_TKT_HIST.TKT_TYP <> 'A' AND
-			PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
-	"""
-	cursor.execute(query)
-	results = cursor.fetchall()
-	ticket_data = {}
+    conn = pymssql.connect(
+        server = '10.0.10.5',
+        user = 'SA',
+        password = 'Counterpoint1',
+        database = 'Jollyspharm',
+        as_dict = True
+    )
+    cursor = conn.cursor()
+    query = f"""
+        SELECT
+            PS_TKT_HIST_LIN.QTY_SOLD,
+            PS_TKT_HIST.CUST_NO,
+            PS_TKT_HIST_LIN.ITEM_NO,
+            PS_TKT_HIST_LIN.TKT_NO,
+            PS_TKT_HIST_LIN.EXT_PRC,
+            PS_TKT_HIST_LIN.EXT_COST,
+            AR_CUST.NAM,
+            PS_TKT_HIST_LIN.DESCR,
+            PS_TKT_HIST_LIN.BUS_DAT,
+            PS_TKT_HIST.TKT_TYP,
+            PS_TKT_HIST_LIN.LIN_TYP,
+            PS_TKT_HIST.STR_ID
+        FROM
+            PS_TKT_HIST
+        LEFT OUTER JOIN
+            AR_CUST
+        ON
+            PS_TKT_HIST.CUST_NO = AR_CUST.CUST_NO
+        INNER JOIN
+            PS_TKT_HIST_LIN 
+        ON
+            PS_TKT_HIST.BUS_DAT = PS_TKT_HIST_LIN.BUS_DAT AND PS_TKT_HIST.DOC_ID = PS_TKT_HIST_LIN.DOC_ID
+        WHERE
+            PS_TKT_HIST_LIN.STR_ID = {location_id} AND
+            PS_TKT_HIST.TKT_TYP <> 'A' AND
+            PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -3, GETDATE()) AS DATE)
+    """
 
-	for item in results:
-		if item['TKT_NO'] not in ticket_data:
-			ticket_data[item['TKT_NO']] = {
-				"items": [
-					{
-					"item_code": item['ITEM_NO'],
-					"item_name": item['DESCR'],
-					"qty": item['QTY_SOLD'],
-					"price": item['EXT_PRC'],
-					"exact_cost": item['EXT_COST'],
-					"description": item['DESCR'],
-					},
-				], 
-				"customer_number": item['CUST_NO'],
-				"customer_name": item['NAM'],
-				"ticket_number": item['TKT_NO'],
-				"ticket_type": item['TKT_TYP'],
-				"post_date": item['BUS_DAT'],
-				"ticket_date": item['BUS_DAT'],
-				"ticket_location": item['STK_LOC_ID'][0],
-				"line_type": item['LIN_TYP'],
-				"total_quantity": item['QTY_SOLD'],
-			}
-		else: 
-			item_data = {
-				"item_code": item['ITEM_NO'],
-				"item_name": item['DESCR'],
-				"qty": item['QTY_SOLD'],
-				"price": item['EXT_PRC'],
-				"exact_cost": item['EXT_COST'],
-				"description": item['DESCR'],
-			}
-			ticket_data[item['TKT_NO']]["total_quantity"] += item['QTY_SOLD']
-			ticket_data[item['TKT_NO']]["items"].append(item_data)
-		
-	tickets = [{**v} for k, v in ticket_data.items()]
+    cursor.execute(query)
+    results = cursor.fetchall()
+    ticket_data = {}
 
-	return tickets
+    for item in results:
+        if item['TKT_NO'] not in ticket_data:
+            ticket_data[item['TKT_NO']] = {
+                'items': [
+                    {
+                        'exact_cost': item['EXT_COST'],
+                        'description': item['DESCR'],
+                        'item_code': item['ITEM_NO'],
+                        'item_name': item['DESCR'],
+                        'price': item['EXT_PRC'],
+                        'qty': item['QTY_SOLD']
+                    }
+                ], 
+                'customer_number': item['CUST_NO'],
+                'total_quantity': item['QTY_SOLD'],
+                'ticket_location': item['STR_ID'],
+                'ticket_number': item['TKT_NO'],
+                'ticket_type': item['TKT_TYP'],
+                'ticket_date': item['BUS_DAT'],
+                'customer_name': item['NAM'],
+                'post_date': item['BUS_DAT'],
+                'line_type': item['LIN_TYP'],
+            }
+        else: 
+            item_data = {
+                'exact_cost': item['EXT_COST'],
+                'description': item['DESCR'],
+                'item_code': item['ITEM_NO'],
+                'item_name': item['DESCR'],
+                'price': item['EXT_PRC'],
+                'qty': item['QTY_SOLD']
+            }
+            ticket_data[item['TKT_NO']]['total_quantity'] += item['QTY_SOLD']
+            ticket_data[item['TKT_NO']]['items'].append(item_data)
+        
+    tickets = [{**v} for k, v in ticket_data.items()]
+
+    return tickets
 
 def create_counterpoint_sales_ticket(ticket):
 	is_return = any(item['qty'] < 0 for item in ticket['items'])
@@ -2509,104 +2529,110 @@ def update_ordered_percentage(material_request):
     }
 
 def query_counterpoint_tickets(fetched_tickets):
-	conn = pymssql.connect(
-		server = '10.0.10.5',
-		user = 'SA',
-		password = 'Counterpoint1',
-		database = 'Jollyspharm',
-		as_dict = True
-	)
-	cursor = conn.cursor()
-	query = """
-		SELECT
-			TKT_NO
-		FROM
-			PS_TKT_HIST
-		WHERE
-			PS_TKT_HIST.TKT_TYP <> 'A' AND
-			PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
-	"""
-	cursor.execute(query) 
-	all_tickets = cursor.fetchall()
-	out = []
+    conn = pymssql.connect(
+        server = '10.0.10.5',
+        user = 'SA',
+        password = 'Counterpoint1',
+        database = 'Jollyspharm',
+        as_dict = True
+    )
+    cursor = conn.cursor()
+    query = """
+        SELECT
+            TKT_NO AS ticket_number
+        FROM
+            PS_TKT_HIST
+        WHERE
+            PS_TKT_HIST.TKT_TYP <> 'A' AND
+            PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -3, GETDATE()) AS DATE)
+    """
+    cursor.execute(query) 
+    all_tickets = cursor.fetchall()
 
-	if not fetched_tickets and not all_tickets:
-		return
+    all_ticket_numbers = {row['ticket_number'] for row in all_tickets}
+    fetched_ticket_numbers = {ticket['ticket_number'] for ticket in fetched_tickets}
+    missing_tickets = all_ticket_numbers - fetched_ticket_numbers
 
-	missing_tickets = [item['TKT_NO'] for item in fetched_tickets if item not in all_tickets] + [item['TKT_NO'] for item in all_tickets if item not in fetched_tickets]
+    if not missing_tickets:
+        conn.close()
+        return fetched_tickets
+    
+    ticket_numbers_str = ",".join([f"'{ticket}'" for ticket in missing_tickets])
 
-	if not missing_tickets:
-		return
+    for ticket in missing_tickets:
+        query2 = f"""
+            SELECT
+                PS_TKT_HIST_LIN.QTY_SOLD,
+                PS_TKT_HIST.CUST_NO,
+                PS_TKT_HIST_LIN.ITEM_NO,
+                PS_TKT_HIST_LIN.TKT_NO,
+                PS_TKT_HIST_LIN.EXT_PRC,
+                PS_TKT_HIST_LIN.EXT_COST,
+                AR_CUST.NAM,
+                PS_TKT_HIST_LIN.DESCR,
+                PS_TKT_HIST_LIN.BUS_DAT,
+                PS_TKT_HIST.TKT_TYP,
+                PS_TKT_HIST_LIN.LIN_TYP,
+                PS_TKT_HIST.STR_ID
+            FROM
+                PS_TKT_HIST
+            LEFT OUTER JOIN
+                AR_CUST
+            ON
+                PS_TKT_HIST.CUST_NO = AR_CUST.CUST_NO
+            INNER JOIN
+                PS_TKT_HIST_LIN 
+            ON
+                PS_TKT_HIST.BUS_DAT = PS_TKT_HIST_LIN.BUS_DAT AND PS_TKT_HIST.DOC_ID = PS_TKT_HIST_LIN.DOC_ID
+            WHERE
+                PS_TKT_HIST_LIN.TKT_NO IN ({ticket_numbers_str}) AND
+                PS_TKT_HIST.TKT_TYP <> 'A' AND
+                PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -3, GETDATE()) AS DATE)
+        """
+        cursor.execute(query2)
+        results = cursor.fetchall()
+        ticket_data = {}
 
-	for ticket in missing_tickets:
-		query2 = f"""
-			SELECT TOP 1
-				PS_TKT_HIST_LIN.QTY_SOLD,
-				PS_TKT_HIST.CUST_NO,
-				PS_TKT_HIST_LIN.ITEM_NO,
-				PS_TKT_HIST_LIN.TKT_NO,
-				PS_TKT_HIST_LIN.EXT_PRC,
-				PS_TKT_HIST_LIN.EXT_COST,
-				IM_ITEM.QTY_DECS,
-				AR_CUST.NAM,
-				PS_TKT_HIST_LIN.DESCR,
-				PS_TKT_HIST_LIN.BUS_DAT,
-				PS_TKT_HIST.TKT_TYP,
-				PS_TKT_HIST_LIN.LIN_TYP,
-				PS_TKT_HIST_LIN.STK_LOC_ID,
-				PS_TKT_HIST.STK_LOC_ID,
-				PS_TKT_HIST_LIN.QTY_NUMER,
-				PS_TKT_HIST_LIN.QTY_DENOM
-			FROM
-				PS_TKT_HIST
-			LEFT OUTER JOIN
-				AR_CUST
-			ON
-				PS_TKT_HIST.CUST_NO = AR_CUST.CUST_NO
-			INNER JOIN
-				PS_TKT_HIST_LIN 
-			ON
-				PS_TKT_HIST.BUS_DAT = PS_TKT_HIST_LIN.BUS_DAT AND PS_TKT_HIST.DOC_ID = PS_TKT_HIST_LIN.DOC_ID
-			LEFT OUTER JOIN
-				IM_ITEM IM_ITEM
-			ON
-				PS_TKT_HIST_LIN.ITEM_NO = IM_ITEM.ITEM_NO
-			WHERE
-				PS_TKT_HIST_LIN.TKT_NO = {ticket['TKT_NO']} AND
-				PS_TKT_HIST.TKT_TYP <> 'A' AND
-				PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
-		"""
-		cursor.execute(query2)
-		result = (cursor.fetchall())
-		ticket_data = {}
+        for item in results:
+            # if item['TKT_NO'] not in ticket_data:
+            ticket_data[item['TKT_NO']] = {
+                'items': [
+                    {
+                        'exact_cost': item['EXT_COST'],
+                        'description': item['DESCR'],
+                        'item_code': item['ITEM_NO'],
+                        'item_name': item['DESCR'],
+                        'price': item['EXT_PRC'],
+                        'qty': item['QTY_SOLD']
+                    }
+                ], 
+                'customer_number': item['CUST_NO'],
+                'total_quantity': item['QTY_SOLD'],
+                'ticket_location': item['STR_ID'],
+                'ticket_number': item['TKT_NO'],
+                'ticket_type': item['TKT_TYP'],
+                'ticket_date': item['BUS_DAT'],
+                'customer_name': item['NAM'],
+                'post_date': item['BUS_DAT'],
+                'line_type': item['LIN_TYP'],
+            }
+            # else: 
+            #     item_data = {
+            #         'exact_cost': item['EXT_COST'],
+            #         'description': item['DESCR'],
+            #         'item_code': item['ITEM_NO'],
+            #         'item_name': item['DESCR'],
+            #         'price': item['EXT_PRC'],
+            #         'qty': item['QTY_SOLD']
+            #     }
+            #     ticket_data[item['TKT_NO']]['total_quantity'] += item['QTY_SOLD']
+            #     ticket_data[item['TKT_NO']]['items'].append(item_data)
+            
+    tickets = list(ticket_data.values())
+    fetched_tickets.extend(tickets)
 
-		ticket_data[result['TKT_NO']] = {
-			"items": [
-				{
-				"item_code": result['ITEM_NO'],
-				"item_name": result['DESCR'],
-				"qty": result['QTY_SOLD'],
-				"price": result['EXT_PRC'],
-				"exact_cost": result['EXT_COST'],
-				"description": result['DESCR'],
-				},
-			], 
-			"customer_number": result['CUST_NO'],
-			"customer_name": result['NAM'],
-			"ticket_number": result['TKT_NO'],
-			"ticket_type": result['TKT_TYP'],
-			"post_date": result['BUS_DAT'],
-			"ticket_date": result['BUS_DAT'],
-			"ticket_location": result['STK_LOC_ID'][0],
-			"line_type": result['LIN_TYP'],
-			"total_quantity": result['QTY_SOLD'],
-		}
-		
-		ticket_data = [{**v} for k, v in ticket_data.items()]
-		out.extend(ticket_data)
-
-	conn.close()
-	return out
+    conn.close()
+    return fetched_tickets.extend(tickets)
 		
 @frappe.whitelist()    
 def item_list(ticket_numbers):
@@ -2832,7 +2858,131 @@ def fetch_pharmacy_scanned_items(location:str) -> list:
     })
 
     return material_issue.items
-    
+
+@frappe.whitelist(allow_guest=True)
+
+def get_item_history(query:str) -> list:
+    try:
+      if query == '':
+        frappe.msgprint('Search Field cannot be left blank')
+        return
+      
+      if frappe.db.exists('Item', query):
+        item_code = query
+
+        item_history = frappe.db.sql(f"""
+          SELECT 
+          pr_item.item_code,
+          pr.supplier,
+          pr_item.description,
+          pr_item.base_rate AS unit_price,
+          pr_item.base_amount AS final_price, 
+          pr_item.received_qty AS qty_ordered,
+          pr_item.schedule_date AS date,
+          pr_item.conversion_factor AS unit,
+          parent AS invoice,
+          item.customs_tariff_number AS tariff_code
+          FROM `tabPurchase Receipt Item` AS pr_item
+          INNER JOIN
+              `tabPurchase Receipt` AS pr
+          ON
+              pr_item.parent = pr.name
+          INNER JOIN 
+              `tabItem` as item
+          ON 
+            pr_item.item_code  = item.item_code
+          WHERE item_code = '{item_code}';
+          """, as_dict=True)
+
+        return item_history
+      elif frappe.db.exists('Item', {'description': ['like', f'%{query}%']}):
+        item_code = frappe.db.get_value('Item', {'description': ['like', f'%{query}%']}, 'item_code')
+
+        item_history = frappe.db.sql(f"""
+          SELECT 
+          pr_item.item_code,
+          pr.supplier,
+          pr_item.description,
+          pr_item.base_rate AS unit_price,
+          pr_item.base_amount AS final_price, 
+          pr_item.received_qty AS qty_ordered,
+          pr_item.schedule_date AS date,
+          pr_item.conversion_factor AS unit,
+          parent AS invoice,
+          item.customs_tariff_number AS tariff_code
+          FROM `tabPurchase Receipt Item` AS pr_item
+          INNER JOIN
+              `tabPurchase Receipt` AS pr
+          ON
+              pr_item.parent = pr.name
+          INNER JOIN 
+              `tabItem` as item
+          ON 
+            pr_item.item_code  = item.item_code
+          WHERE item_code = '{item_code}';
+          """, as_dict=True)
+
+        return item_history
+      elif frappe.db.exists('Supplier', {'supplier_name': ['like', f'%{query}%']}):
+        supplier = frappe.db.get_value('Supplier', {'supplier_name': ['like', f'%{query}%']}, 'name')
+
+        item_history = frappe.db.sql(f"""
+          SELECT 
+          pr_item.item_code,
+          pr.supplier,
+          pr_item.description,
+          pr_item.base_rate AS unit_price,
+          pr_item.base_amount AS final_price, 
+          pr_item.received_qty AS qty_ordered,
+          pr_item.schedule_date AS date,  
+          pr_item.conversion_factor AS unit,
+          parent AS invoice,
+          item.customs_tariff_number AS tariff_code
+          FROM `tabPurchase Receipt Item` AS pr_item
+          INNER JOIN
+              `tabPurchase Receipt` AS pr
+          ON
+              pr_item.parent = pr.name
+          INNER JOIN 
+              `tabItem` as item
+          ON 
+            pr_item.item_code  = item.item_code
+          WHERE pr.supplier = '{supplier}';
+          """, as_dict=True)
+
+        return item_history
+      elif frappe.db.exists('Purchase Receipt', query): 
+        purchase_receipt = frappe.db.get_value('Purchase Receipt', query)
+
+        item_history = frappe.db.sql(f"""
+          SELECT 
+          pr_item.item_code,
+          pr.supplier,
+          pr_item.description,
+          pr_item.base_rate AS unit_price,
+          pr_item.base_amount AS final_price, 
+          pr_item.received_qty AS qty_ordered,
+          pr_item.schedule_date AS date,
+          pr_item.conversion_factor AS unit,
+          parent AS invoice, 
+          item.customs_tariff_number AS tariff_code
+          FROM `tabPurchase Receipt Item` AS pr_item
+          INNER JOIN
+              `tabPurchase Receipt` AS pr
+          ON
+              pr_item.parent = pr.name
+          INNER JOIN 
+              `tabItem` as item
+          ON 
+            pr_item.item_code  = item.item_code                       
+          WHERE pr.name = '{purchase_receipt}';
+          """, as_dict=True)
+
+        return item_history
+    except Exception as e:
+      frappe.msgprint(title='An Error Occurred', msg=e)
+      return
+
 @frappe.whitelist(allow_guest=True)
 def pharmacy_scanner(barcode:str, location:str) -> dict:
     if location == '':
@@ -2915,14 +3065,16 @@ def pharmacy_scanner(barcode:str, location:str) -> dict:
 
     return out
 
-# import pandas as pd
-# from sklearn.model_selection import train_test_split
-# from sklearn.feature_extraction.text import TfidfVectorizer
-# from sklearn.naive_bayes import MultinomialNB
-# from sklearn.pipeline import make_pipeline
-# from sklearn.metrics import classification_report
-# import re
-# import html
+import re
+import html
+
+import pandas as pd
+
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.pipeline import make_pipeline
+from sklearn.metrics import classification_report
 
 # def sanitize_input(description, brands):
 #     # Decode HTML entities
@@ -2980,48 +3132,109 @@ def pharmacy_scanner(barcode:str, location:str) -> dict:
 
 # import openai
 
-# def ask_gpt(model="gpt-4"):
-# 	tariff_records = frappe.db.get_all('Item', fields=['description', 'customs_tariff_number'], limit=100)
-# 	tariff_data_str = "\n".join(
-# 		[f"{record['customs_tariff_number']}: {record['description']}" for record in tariff_records]
-# 	)
-# 	item_description = 'BATTERY OPERATED ENGRAVING PEN'
-# 	prompt = f"""
-# 		SYSTEM PROTOCOL ACTIVATED: TARIFF CLASSIFIER v3.2 (STRICT CODE-ONLY OUTPUT)
+def ask_gpt(model="gpt-4"):
+	tariff_records = frappe.db.get_all('Item', fields=['description', 'customs_tariff_number'], limit=100)
+	tariff_data_str = "\n".join(
+		[f"{record['customs_tariff_number']}: {record['description']}" for record in tariff_records]
+	)
+	item_description = 'BATTERY OPERATED ENGRAVING PEN'
+	prompt = f"""
+		SYSTEM PROTOCOL ACTIVATED: TARIFF CLASSIFIER v3.2 (STRICT CODE-ONLY OUTPUT)
 
-# 		1. SILENT ANALYSIS PHASE:
-# 		- Material decomposition: glass(70%) + metal(25%) + plastic(5%)
-# 		- Functional classification: personal grooming device
-# 		- Manufacturing process: molded frame + silvered glass
+		1. SILENT ANALYSIS PHASE:
+		- Material decomposition: glass(70%) + metal(25%) + plastic(5%)
+		- Functional classification: personal grooming device
+		- Manufacturing process: molded frame + silvered glass
 
-# 		2. MANDATORY MATCHING SEQUENCE:
-# 		a) Attempt exact product match in REFERENCE DATA below
-# 		b) Analyze materials, function, and manufacturing method to identify ALL applicable tariff classifications
-# 		c) Select the **most specific and relevant** code based on global customs logic
-# 		d) If no definitive classification exists, default to a general fallback code (format: xxxx.90000)
+		2. MANDATORY MATCHING SEQUENCE:
+		a) Attempt exact product match in REFERENCE DATA below
+		b) Analyze materials, function, and manufacturing method to identify ALL applicable tariff classifications
+		c) Select the **most specific and relevant** code based on global customs logic
+		d) If no definitive classification exists, default to a general fallback code (format: xxxx.90000)
 
-# 		REFERENCE DATA:
-# 		{tariff_data_str}
+		REFERENCE DATA:
+		{tariff_data_str}
 
-# 		3. OUTPUT GENERATION RULES:
-# 		- FORMAT: ^\\d{{4}}\\.\\d{{5}}$ (regex-enforced)
-# 		- EXAMPLES: 7009.91000, 9605.90000
-# 		- STRICTURE: If no valid classification found, use 9999.99999 (null value placeholder)
+		3. OUTPUT GENERATION RULES:
+		- FORMAT: ^\\d{{4}}\\.\\d{{5}}$ (regex-enforced)
+		- EXAMPLES: 7009.91000, 9605.90000
+		- STRICTURE: If no valid classification found, use 9999.99999 (null value placeholder)
 
-# 		4. EXECUTION DIRECTIVE:
-# 		YOUR OUTPUT MUST BE THE CODE ITSELF — NO PREFIX, NO SUFFIX, NO SENTENCES.
-# 		UNAUTHORIZED TEXT WILL CAUSE SYSTEM REJECTION.
+		4. EXECUTION DIRECTIVE:
+		YOUR OUTPUT MUST BE THE CODE ITSELF — NO PREFIX, NO SUFFIX, NO SENTENCES.
+		UNAUTHORIZED TEXT WILL CAUSE SYSTEM REJECTION.
 
-# 		PRODUCT: {item_description}
-# 		FINAL OUTPUT:
-# 	"""
-# 	response = openai.ChatCompletion.create(
-# 		model=model,
-# 		messages=[
-# 			{"role": "system", "content": "You are a global trade and customs classification expert with access to current tariff schedule data."},
-# 			{"role": "user", "content": prompt}
-# 		],
-# 		temperature=0.0,
-# 		max_tokens=50,
-# 	)
-# 	return response['choices'][0]['message']['content'].strip()
+		PRODUCT: {item_description}
+		FINAL OUTPUT:
+	"""
+	response = openai.ChatCompletion.create(
+		model=model,
+		messages=[
+			{"role": "system", "content": "You are a global trade and customs classification expert with access to current tariff schedule data."},
+			{"role": "user", "content": prompt}
+		],
+		temperature=0.0,
+		max_tokens=50,
+	)
+	return response['choices'][0]['message']['content'].strip()
+
+from customs_management.woocommerce_orders import get_order_info
+from frappe.utils.data import flt
+from frappe import _
+
+@frappe.whitelist(allow_guest=True)
+def create_order_verification():
+    order = get_order_info()
+    order_verification = frappe.new_doc('Order Verification')
+    order_verification.update({
+        'currency': order.currency,
+        'item_count': order.item_count,
+        'order_number': order.order_number,
+        'total_item_qty': order.total_item_qty
+    })
+    for item in order['items']:
+        doc = frappe.get_doc('Item', item.item_code)
+        order_verification.append('items', {
+            'amount': item.amount,
+            'item': doc.item_code,
+            'description': doc.description,
+            'customs_tariff_number': doc.customs_tariff_number
+        })
+
+    tariff_numbers = {}
+
+    for item in order_verification.items:
+        print('itemamount: ',item.amount)
+        if item.customs_tariff_number:
+            tariff_number = item.customs_tariff_number
+
+            try:
+                tariff_doc = frappe.get_doc('Customs Tariff Number', tariff_number)
+
+            except frappe.DoesNotExistError:
+                frappe.throw(_("Customs Tariff Number {0} not found").format(tariff_number))
+
+            if tariff_number not in tariff_numbers:
+                tariff_numbers[tariff_number] = {
+                    'tariff_doc': tariff_doc,
+                    'items': [],
+                    'total_amount': 0.0,
+                }
+
+            tariff_numbers[tariff_number]['items'].append(item)
+            tariff_numbers[tariff_number]['total_amount'] += item.amount
+
+    for tariff_number, data in tariff_numbers.items():
+        duty_percent = data['tariff_doc'].custom_duty_percentage
+        total_amount = data['total_amount']
+
+        order_verification.append('tariff_number_summary', {
+            'customs_tariff_number': tariff_number,
+            'description': data['tariff_doc'].description,
+            'duty_percentage': duty_percent,
+            'amount': total_amount,
+            'duty_amount': flt((total_amount / 100) * duty_percent, 3),
+        })
+
+    order_verification.insert()
+    frappe.db.commit()

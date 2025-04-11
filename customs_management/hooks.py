@@ -167,9 +167,9 @@ scheduler_events = {
 	# "daily": [
 	# 	"customs_management.tasks.daily"
 	# ],
-	# "hourly": [
-	# 	"customs_management.tasks.hourly"
-	# ],
+	"hourly": [
+        'customs_management.woocommerce_orders.sync_orders'
+	],
 	# "weekly": [
 	# 	"customs_management.tasks.weekly"
 	# ],
