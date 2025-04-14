@@ -168,7 +168,7 @@ scheduler_events = {
 	# 	"customs_management.tasks.daily"
 	# ],
 	"hourly": [
-        'customs_management.woocommerce_orders.sync_orders'
+        'customs_management.utils.woocommerce_orders.sync_orders'
 	],
 	# "weekly": [
 	# 	"customs_management.tasks.weekly"
@@ -183,7 +183,10 @@ scheduler_events = {
         #     "customs_management.api.schedule_create_sales_invoice_from_ticket"
         # ],
         "0 2 * * *": [
-            "customs_management.api.sync_counterpoint_sales"
+            "customs_management.utils.counterpoint_sync.sync_counterpoint_sales"
+        ],
+        "0 7 * * *": [
+            "customs_management.utils.counterpoint_sync.send_missing_ticket_noticication"
         ]
         # "0 0 * * *": [
         #     "customs_management.api.send_outstanding_material_request_emails"

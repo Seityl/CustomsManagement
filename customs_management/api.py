@@ -1714,7 +1714,7 @@ def get_counterpoint_sales(location_id):
         WHERE
             PS_TKT_HIST_LIN.STR_ID = {location_id} AND
             PS_TKT_HIST.TKT_TYP <> 'A' AND
-            PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -3, GETDATE()) AS DATE)
+            PS_TKT_HIST.BUS_DAT = CAST(DATEADD(DAY, -1, GETDATE()) AS DATE)
     """
 
     cursor.execute(query)
@@ -3178,7 +3178,7 @@ def ask_gpt(model="gpt-4"):
 	)
 	return response['choices'][0]['message']['content'].strip()
 
-from customs_management.woocommerce_orders import get_order_info
+from customs_management.utils.woocommerce_orders import get_order_info
 from frappe.utils.data import flt
 from frappe import _
 
@@ -3238,3 +3238,25 @@ def create_order_verification():
 
     order_verification.insert()
     frappe.db.commit()
+
+import requests
+
+def send_sms():
+    API_KEY = '9fc47fdf-d54d-4798-85d6-5711ba81e463'
+    DEVICE_ID = '67fa915eed94519e3b2241fc'
+
+    url = f'http://10.0.10.230/api/v1/gateway/devices/{DEVICE_ID}/send-sms'
+
+    payload = {
+        'recipients': ['+17672760823'],
+        'message': 'Hello World!'
+    }
+
+    headers = {
+        'x-api-key': API_KEY
+    }
+
+    response = requests.post(url, json=payload, headers=headers)
+
+    print(response.status_code)
+    print(response.json())

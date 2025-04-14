@@ -23,27 +23,27 @@ from customs_management.api import add_tofob
 from customs_management.api import create_attachment
 
 class CustomsEntry(Document):
-	def before_save(self):
-		try:
-			self.update_additional_charges_table()
-			let_selections = list({item.reference_document for item in self.items})
+	# def before_save(self):
+	# 	try:
+	# 		self.update_additional_charges_table()
+	# 		let_selections = list({item.reference_document for item in self.items})
 			
-			if let_selections:
-				self.recalculate_charges(let_selections)
+	# 		if let_selections:
+	# 			self.recalculate_charges(let_selections)
 			
-			self.update_tariff_number_summary_table()
-			self.update_consolidation_table()
-			self.update_tax_table()
+	# 		self.update_tariff_number_summary_table()
+	# 		self.update_consolidation_table()
+	# 		self.update_tax_table()
 			
-			purchases_list = json.loads(self.purchases_list)
-			create_attachment(self, 'Customs Entry', self.name, self.doctype, purchases_list)
+	# 		purchases_list = json.loads(self.purchases_list)
+	# 		create_attachment(self, 'Customs Entry', self.name, self.doctype, purchases_list)
 		
-		except json.JSONDecodeError:
-			frappe.throw(_("Invalid JSON format in purchases_list. Please check the data."))
+	# 	except json.JSONDecodeError:
+	# 		frappe.throw(_("Invalid JSON format in purchases_list. Please check the data."))
 
-		except Exception as e:
-			frappe.log_error(frappe.get_traceback(), _("Customs Entry Before Save Error"))
-			frappe.throw(_("Error saving Customs Entry: {0}").format(str(e)))
+	# 	except Exception as e:
+	# 		frappe.log_error(frappe.get_traceback(), _("Customs Entry Before Save Error"))
+	# 		frappe.throw(_("Error saving Customs Entry: {0}").format(str(e)))
 
 	def on_submit(self):
 		try:

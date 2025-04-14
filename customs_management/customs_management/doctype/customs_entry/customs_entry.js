@@ -615,6 +615,15 @@ frappe.ui.form.on('Customs Entry', {
         frm.fields_dict.tax_info.grid.update_footer();
 	},
 
+	entry_type: function(frm) {
+        if(frm.doc.entry_type === 'Import') {
+            frm.set_value('naming_series', '{bill_of_lading}');
+        } else if(frm.doc.entry_type === 'Export') {
+            frm.set_value('naming_series', '{order_number}');
+        }
+        frm.refresh();
+    },
+
 	currency: function(frm) {
 		frappe.call({
 			method: "get_exchange_rate",
